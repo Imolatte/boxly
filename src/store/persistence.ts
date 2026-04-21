@@ -1,0 +1,47 @@
+import type { Board } from '../types/board';
+import type { PlayerState } from '../types/player';
+import { getStorage } from '../storage/storage';
+
+const SAVE_KEY = 'boxly_save_v1';
+const SAVE_VERSION = 2;
+
+interface SaveData {
+  v: number;
+  board: Board;
+  player: PlayerState;
+  meta: { version: number; createdAt: number; lastPlayedAt: number };
+}
+
+export async function loadSave(): Promise<SaveData | null> {
+  try {
+    const raw = await getStorage().getItem(SAVE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SaveData;
+    if (parsed.v !== SAVE_VERSION) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export async function writeSave(data: SaveData): Promise<void> {
+  try {
+    await getStorage().setItem(SAVE_KEY, JSON.stringify(data));
+  } catch {
+    // Ignore write errors
+  }
+}
+
+export async function clearSave(): Promise<void> {
+  await getStorage().removeItem(SAVE_KEY);
+}
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function debouncedSave(data: SaveData, delayMs = 500): void {
+  if (debounceTimer !== null) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    await writeSave(data);
+    debounceTimer = null;
+  }, delayMs);
+}
