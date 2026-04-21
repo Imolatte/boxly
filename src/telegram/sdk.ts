@@ -3,6 +3,9 @@ export function initTelegram(): void {
   if (!wa) return;
   wa.ready();
   wa.expand();
+  // WHY: Bot API 7.7+ — prevents Telegram from intercepting vertical swipes as "minimize"
+  // gesture, which would steal touch events from dnd-kit drag on mobile.
+  wa.disableVerticalSwipes?.();
 }
 
 export function getTelegramUser(): {

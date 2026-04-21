@@ -53,6 +53,8 @@ interface TelegramWebApp {
   ready(): void;
   expand(): void;
   onEvent(eventType: string, callback: () => void): void;
+  disableVerticalSwipes?(): void;
+  enableVerticalSwipes?(): void;
 }
 
 interface TelegramObject {
