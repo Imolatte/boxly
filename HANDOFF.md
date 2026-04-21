@@ -7,12 +7,14 @@ Telegram Mini App — упрощённый клон Gift Fest 2 (merge-игра 
 - **Бот:** [@boxly_game_bot](https://t.me/boxly_game_bot) (ID 8705283199)
 - **Токен:** в `.env.local` (не коммитить)
 - **Директория:** `/Users/andrejpetrusihin/develop/personal/boxly`
-- **Деплой:** Vercel (будущее)
+- **Репозиторий:** https://github.com/Imolatte/boxly
+- **Прод:** https://imolatte.github.io/boxly/ (GitHub Pages, авто-деплой через Actions по push в main)
+- **Бывший прод (Vercel):** https://boxly-sigma.vercel.app (частично блочится РКН, не используем)
 
 ## Game design (финальное ТЗ, согласовано)
 
 ### Поле и ресурсы
-- Поле **5×6 = 30 клеток**, drag&drop (игрок сам двигает)
+- Поле **5×5 = 25 клеток**, drag&drop (игрок сам двигает)
 - Энергия: cap **100** в начале, регенерация **+1 каждые 5 минут**. Cap растёт **+5 за каждый lvl игрока**
 - Тап "Создать" = **1 энергия** = падает 1 **часть** подарка в свободную клетку
 - Кнопка "Создать" **disabled если:** `energy < 1` ИЛИ на поле 0 пустых клеток
