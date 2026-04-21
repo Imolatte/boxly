@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TopHud } from './components/layout/TopHud';
 import { TabBar, type TabId } from './components/layout/TabBar';
 import { ToastContainer } from './components/common/Toast';
@@ -9,6 +9,7 @@ import { GamePage } from './pages/GamePage';
 import { CollectionPage } from './pages/CollectionPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { useTelegramBackButton } from './hooks/useTelegramBackButton';
+import { DebugPanel, debugLog } from './components/common/DebugPanel';
 
 const TAB_HEIGHT = 56; // min-h-14 = 56px
 
@@ -16,6 +17,11 @@ export function App(): JSX.Element {
   const [activeTab, setActiveTab] = useState<TabId>('game');
 
   useTelegramBackButton(activeTab !== 'game', () => setActiveTab('game'));
+
+  useEffect(() => {
+    debugLog(`app mounted v=${(window.Telegram?.WebApp as unknown as { version?: string } | undefined)?.version ?? '?'} ua=${navigator.userAgent.slice(0, 60)}`);
+    debugLog(`viewport ${window.innerWidth}x${window.innerHeight} dpr=${window.devicePixelRatio}`);
+  }, []);
 
   return (
     <div className="min-h-screen bg-boxly-bg flex flex-col">
@@ -35,6 +41,7 @@ export function App(): JSX.Element {
       <RouletteModal />
       <LevelUpOverlay />
       <OnboardingOverlay />
+      <DebugPanel />
     </div>
   );
 }

@@ -1,11 +1,19 @@
 export function initTelegram(): void {
   const wa = window.Telegram?.WebApp;
-  if (!wa) return;
+  if (!wa) {
+    import('../components/common/DebugPanel').then((m) => m.debugLog('TG: no window.Telegram.WebApp (not in Telegram)'));
+    return;
+  }
   wa.ready();
   wa.expand();
   // WHY: Bot API 7.7+ — prevents Telegram from intercepting vertical swipes as "minimize"
   // gesture, which would steal touch events from dnd-kit drag on mobile.
-  wa.disableVerticalSwipes?.();
+  const hasDisable = typeof wa.disableVerticalSwipes === 'function';
+  if (hasDisable) wa.disableVerticalSwipes!();
+  import('../components/common/DebugPanel').then((m) => {
+    m.debugLog(`TG: ready+expand ok, disableVerticalSwipes=${hasDisable ? 'called' : 'MISSING'}`);
+    m.debugLog(`TG: version=${(wa as unknown as { version?: string }).version ?? '?'} platform=${(wa as unknown as { platform?: string }).platform ?? '?'}`);
+  });
 }
 
 export function getTelegramUser(): {

@@ -1,4 +1,4 @@
-import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
+import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
@@ -7,6 +7,7 @@ import { Cell } from './Cell';
 import type { GiftItem } from '../../types/gift';
 import { GIFT_CONFIGS } from '../../config/gifts';
 import { COLLECTIBLE_CONFIGS } from '../../config/collectibles';
+import { debugLog } from '../common/DebugPanel';
 
 function getDragIcon(item: GiftItem): { icon: string; color: string; bg: string } {
   if (item.kind === 'collectible') {
@@ -39,23 +40,26 @@ export function Board(): JSX.Element {
   const [activeDragItem, setActiveDragItem] = useState<GiftItem | null>(null);
 
   const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
   function handleDragStart(event: DragStartEvent): void {
     const { cellId } = event.active.data.current as { cellId: string };
     const cell = board.find((c) => c.id === cellId);
     setActiveDragItem(cell?.item ?? null);
+    debugLog(`dragStart from=${cellId} item=${cell?.item?.kind ?? 'empty'}`);
   }
 
   function handleDragEnd(event: DragEndEvent): void {
     setActiveDragItem(null);
     const { over, active } = event;
-    if (!over) return;
-
     const fromCellId = (active.data.current as { cellId: string }).cellId;
+    if (!over) {
+      debugLog(`dragEnd from=${fromCellId} over=null (dropped in void)`);
+      return;
+    }
     const toCellId = (over.data.current as { cellId: string }).cellId;
+    debugLog(`dragEnd ${fromCellId} -> ${toCellId}`);
 
     if (fromCellId !== toCellId) {
       tryMerge(fromCellId, toCellId);
