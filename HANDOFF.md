@@ -120,8 +120,14 @@ src/
 | **E7** | Vercel deploy + BotFather menu button | ✅ DONE | 2-3 |
 | **E8** | Визуальная полировка + UX-тюнинг (без баланса) | ✅ DONE | 3-5 |
 | **E9** | Баланс + SFX (Web Audio API, 7 звуков, mute toggle) | ✅ DONE | 2-3 |
+| **E10** | Bug-bash: дрэг, персистентность, рулетка, XP display, инфра | ✅ DONE | 2-3 |
+| **E11** | Красивые подарки — эмодзи-стиль вместо плоских иконок | → NEXT | 3-5 |
 
-**MVP играбельный.** Production URL: https://boxly-sigma.vercel.app — в боте [@boxly_game_bot](https://t.me/boxly_game_bot) кнопка "Играть" в menu.
+**MVP играбельный.** Production URL: https://imolatte.github.io/boxly/ — в боте [@boxly_game_bot](https://t.me/boxly_game_bot) кнопка "Играть" в menu.
+
+Репо: https://github.com/Imolatte/boxly (public). Auto-deploy на push в `main` через GitHub Actions.
+
+Webhook на `/start` (server-to-server, РКН не мешает): https://boxly-webhook.vercel.app/api/telegram (отдельный Vercel-проект, токен в env).
 
 ## Текущий статус (2026-04-21)
 
@@ -238,7 +244,93 @@ src/
 - `npx tsc --noEmit` — exit 0
 - `npm run build` — JS 400.51 kB (gzip 131.64 kB) / CSS 13.58 kB (prирост +3.65 kB, чистый Web Audio)
 
-Игра готова, на будущее: реферальная система / лидерборды / новые коллекционки.
+### E10 ✅ (2026-04-21)
+
+Пост-плейтест баг-баш + миграция инфры.
+
+**Инфраструктура:**
+- Репозиторий: https://github.com/Imolatte/boxly (public, `main` branch)
+- Hosting: **GitHub Pages** — https://imolatte.github.io/boxly/ через GH Actions (`.github/workflows/deploy.yml`), авто-деплой на push в main
+- `vite.config.ts`: `base: '/boxly/'` для корректных путей ассетов
+- `vercel.json` остался — можно задеплоить параллельно через `vercel --prod --yes --scope imolattes-projects`, но старый https://boxly-sigma.vercel.app используется **только** для webhook, не для mini app
+- Webhook бота: отдельный Vercel-проект `/tmp/boxly-webhook/` → https://boxly-webhook.vercel.app/api/telegram
+  - Edge runtime, отвечает на `/start` и `/play` приветствием + inline-кнопкой "Играть в Boxly"
+  - `TELEGRAM_BOT_TOKEN` в Vercel env (prod-scope)
+  - Server-to-server: Telegram-серверы из Амстердама зовут Vercel напрямую — РКН не мешает
+  - Регистрация: `curl -G "https://api.telegram.org/bot$TOKEN/setWebhook" --data-urlencode "url=https://boxly-webhook.vercel.app/api/telegram"`
+- Bot meta через Bot API:
+  - `setMyShortDescription`: "Уютная мерж-игра с подарками и коллекционками"
+  - `setMyDescription`: "Boxly — уютная мерж-игра с подарками..."
+  - `setMyCommands`: `/start`, `/play`
+  - `setChatMenuButton`: text="Играть", url=https://imolatte.github.io/boxly/
+
+**Исправленные баги:**
+1. **Драг на мобилке** — `Board.tsx` перешёл с `TouchSensor(delay:120ms)` на `PointerSensor(distance:6px)` — драг запускается сразу при сдвиге 6px. `GiftSprite.tsx` получил `touchAction: 'none'` в inline-стиль.
+2. **Telegram WebView перехват свайпов** — `telegram/sdk.ts::initTelegram()` зовёт `wa.disableVerticalSwipes?.()` (Bot API 7.7+). Без этого вертикальные тач-движения на мобильной Telegram перехватывались как "свернуть приложение".
+3. **Перезапуск = новая игра** — `SAVE_VERSION` был бампнут 1→2 (из-за смены 5×6 → 5×5), но все `debouncedSave` писали `v: 1`. Отрефакторил: `writeSave` сама проставляет `SAVE_VERSION` из одного места, `SaveData` больше не содержит `v`. Все call-sites чистые.
+4. **XP -100 из 300 при первом запуске** — `totalXpToReach(1) = 100`, но игрок стартует с 0 XP. В `TopHud.tsx` и `ProfilePage.tsx` — спецкейс для level 1: `xpPrev = player.level <= 1 ? 0 : totalXpToReach(player.level)`. Плюс `Math.max(0, ...)` для страховки.
+5. **Рулетка — gift/collectible награды терялись** — в `applyRouletteReward` не было веток для `kind: 'gift'` и `kind: 'collectible'` при наличии места на поле. Добавил `placeInFirstEmpty(board, item)` helper. Все ветки теперь дёргают `debouncedSave`. Если XP-награда вызывает level-up — показывается overlay.
+6. **AudioContext на iOS WebView** — `sfx.ts::getCtx()` теперь проверяет `window.AudioContext || window.webkitAudioContext` (нужно для старых iOS Safari < 14.5).
+
+**Поле:** `BOARD_H`: 6 → 5. Поле теперь `5×5 = 25 клеток`.
+
+**Debug-панель:** `src/components/common/DebugPanel.tsx` — видна при `?debug=1` в URL, показывает последние 50 событий (tg version/platform, disableVerticalSwipes, dragStart/dragEnd, viewport, userAgent). Логи пишут: `sdk.ts`, `App.tsx`, `Board.tsx`. Сигнатура: `debugLog(message)` / `isDebugMode()`.
+
+**Известная проблема, не чиним:**
+Mini App не грузится на мобильных операторах РФ (МТС/Мегафон/Билайн) без системного VPN, даже если `imolatte.github.io` открывается в браузере. Ресёрч: Telegram WebView идёт в сеть **в обход MTProto-прокси**, использует системный DNS + системный TLS, из-за чего оператор режет ClientHello по SNI `github.io`. Решения: миграция на Яндекс Облако Object Storage (в белом списке Минцифры) — скорее всего понадобится, но пользователь сейчас мирится с включённым VPN. См. отчёт ресёрчера в сессии 2026-04-21.
+
+**Метрики после E10:**
+- `npm test` — 35/35 passed
+- `npx tsc --noEmit` — exit 0
+- `npm run build` — JS 404.54 kB (gzip 133.24 kB) / CSS 13.61 kB (prирост +4 kB, DebugPanel + логи)
+- Deploy: https://imolatte.github.io/boxly/
+
+---
+
+### E11 (NEXT) — Красивые подарки "эмодзи-стиль"
+
+**Проблема:** сейчас подарки в `GiftSprite.tsx` — это **плоские цветные плашки** с одной Phosphor-иконкой в центре (`ph:bell-simple`, `ph:gift`, `ph:heart`...). Смотрится как демо-иконпак, не как игровые подарки. Хочется **объёмные, живые, "эмодзи-стиль"** — как в Gift Fest 2 / Candy Crush / подобных — с блеском, объёмом, тенями, распознаваемой формой.
+
+**Три возможных пути:**
+
+1. **3D-style CSS + SVG композиция**  
+   - Каждый подарок = композиция из нескольких SVG-слоёв: base shape + highlight + shadow + shine. Цвета градиентами, не плоские.  
+   - Пример: подарок lvl1 = коробка с бантом (3 слоя: коробка peach-gradient + бант персик-темнее + белый highlight 15deg).  
+   - Полностью контролируется кодом, легко тюнится, работает офлайн, вес ~0 KB.  
+   - Минус: дорого по времени — 10 подарков × 4-6 слоёв каждый.
+
+2. **Готовые эмодзи-style иконпаки (Fluent, Noto, OpenMoji, Twemoji)**  
+   - Свободные лицензии: Fluent Emoji (Microsoft, MIT), Noto Emoji (Google, Apache 2), OpenMoji (CC BY-SA).  
+   - Подключение: `@iconify/react` с `fluent-emoji:gift` / `noto:gift` / итп. Iconify покрывает все эти наборы.  
+   - Вес: каждая иконка inline SVG, ~2-5 KB.  
+   - Плюс: готово, объёмно, узнаваемо, быстро.  
+   - Минус: стиль эмодзи (обычно Apple/Google-style), не совсем "наш" — нужно подобрать набор с подходящим warm-vibe.
+
+3. **Нарисовать через AI (DALL-E / Midjourney / Figma + экспорт в SVG/PNG)**  
+   - Полная кастомность, фирменный стиль.  
+   - Минус: нужно время на генерацию, итерации, экспорт, оптимизация.  
+   - Bundle сильно толще (PNG 10×100 KB = 1 MB или SVG по 30 KB × 10 = 300 KB).
+
+**Рекомендация:** старт с пути 2 (Fluent Emoji), fallback на путь 1 для 10 ключевых коллекционок если Fluent не подходит. Быстро, дёшево, сразу "играбельный вид". Пользователю понравится или нет — за 20 минут увидим.
+
+**Требования к итогу:**
+- Каждый lvl 1-10 визуально **распознаваем за 0.5 сек** (не нужно читать "lvl 3" чтобы понять).
+- Прогрессия цвета/редкости: lvl1-3 — тёплые/простые (коробка, мишка, цветок), lvl4-6 — средние (драгоценности, сладости), lvl7-10 — "вау" (корона, сундук сокровищ, звезда, радуга).
+- Сохранить существующие **механики сияния**: collectible — золотой glow-ring + крутящийся sparkle; complete lvl>=7 — breathing; part — diagonal stripes; intermediate — half-fill badge.
+- 10 коллекционок (`col_1` .. `col_10`) тоже обновить под тот же стиль.
+- Bundle прирост — ожидаемо не более +100 KB (на всё про всё).
+
+**Файлы для правки:**
+- `src/config/gifts.ts` — `icon` менять на emoji-style вариант
+- `src/config/collectibles.ts` — аналогично
+- `src/components/board/GiftSprite.tsx` — возможно обновить `resolveStyle` если эмодзи заменят текущее отображение
+- Если путь 1 (SVG-композиция): новый `src/components/board/gifts/GiftArt.tsx` с композициями на lvl
+
+**Как проверить:**
+1. `npm run dev` на localhost:5173 — визуальная проверка на Board
+2. На мобилке через https://imolatte.github.io/boxly/?debug=1 — убедиться что лог dragStart/dragEnd работает
+3. Тест мёрджа: lvl1 + lvl1 → lvl2 — анимация остаётся, просто меняется спрайт
+4. Sell → спрайт улетает вниз с fade
 
 ---
 
@@ -321,18 +413,71 @@ source .env.local && curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/ge
 npm run dev   # локальный дев на 5173
 ```
 
-## Promt для новой сессии
+## Deploy (E10+)
+
+Автодеплой: `git push origin main` → GitHub Actions → GH Pages.
+Ручной: `npm run build` (проверить локально), далее push.
+
+Быстро проверить прод отвечает: `curl -sI https://imolatte.github.io/boxly/`
+
+Webhook (отдельный проект): `/tmp/boxly-webhook/` → правка → `cd /tmp/boxly-webhook && vercel --prod --yes --scope imolattes-projects`
+
+---
+
+## Промт для новой сессии (E11 — красивые подарки)
 
 ```
 Продолжи работу над Telegram Mini App Boxly в /Users/andrejpetrusihin/develop/personal/boxly.
-Прочитай HANDOFF.md — там полное ТЗ, механика, все этапы и зафиксированные решения.
-E1-E7 завершены. MVP играбельный: https://boxly-sigma.vercel.app, в @boxly_game_bot кнопка "Играть".
-Следующий этап — E8 (визуальная полировка + UX + баланс). См. § "Что должно получиться после E8".
 
-Задача этой сессии: сделать красивый, живой, характерный look — не generic Tailwind/AI-дефолт.
-Для UI работы используй `coder` или `designer` субагента с `frontend-design` скилом
-(main thread НЕ вызывает frontend-design напрямую).
+ПЕРВЫМ ДЕЛОМ прочитай HANDOFF.md целиком — там вся механика, инфра, история багов, и
+подробный план на E11 в секции "E11 (NEXT) — Красивые подарки эмодзи-стиль".
 
-Бот @boxly_game_bot, токен в .env.local. Deploy: `vercel --prod --yes --scope imolattes-projects`.
-Автомод, автономно.
+Кратко: E1–E10 готовы, MVP играбельный на https://imolatte.github.io/boxly/ (GH Pages, auto-deploy
+из main через GitHub Actions). Бот @boxly_game_bot, webhook на /start крутится
+на https://boxly-webhook.vercel.app. Репо https://github.com/Imolatte/boxly.
+
+Задача E11: заменить плоские Phosphor-иконки подарков на объёмные "эмодзи-стиль" визуалы —
+с блеском, градиентами, распознаваемой формой. Сейчас в src/config/gifts.ts у каждого
+из 10 уровней просто { icon: 'ph:gift', color: '#hex' }. Выглядит как демо-иконпак.
+
+План из HANDOFF (кратко):
+- Путь 1 — Fluent Emoji через iconify (@iconify/react поддерживает fluent-emoji:* и noto:*) — рекомендуемый старт.
+- Путь 2 — SVG-композиция с градиентами и highlight-слоями — для уникальности.
+- Путь 3 — AI-генерация PNG/SVG — дорого.
+
+Делай путь 1 сначала: подбери 10 эмодзи для lvl1–lvl10 с нарастанием редкости/вау-фактора,
+подставь их в gifts.ts, убедись что GiftSprite.tsx корректно рендерит (возможно надо
+адаптировать фон, чтобы не перекрывал эмодзи), прогони локально через `npm run dev`,
+снимай скрины, сравнивай. Аналогично для 10 коллекционок в collectibles.ts.
+
+Сохрани существующие механики сияния (collectible ring, complete lvl>=7 breathing, part stripes,
+intermediate half-badge) — они в GiftSprite.tsx в variants part/intermediate/complete/collectible.
+
+После визуала — быстрый тест:
+- npm test (35/35)
+- npx tsc --noEmit (exit 0)
+- npm run build (bundle ~+50-100 KB ожидаемо, потолок ~500 KB)
+- git push (GH Pages задеплоит сам за ~40 сек)
+- открой https://imolatte.github.io/boxly/ через Telegram бота, сравни с предыдущим
+
+Для дизайнерских решений и SVG-композиций используй `designer` или `coder` субагент
+с frontend-design/nothing-design скилом. Main thread НЕ зовёт frontend-design напрямую
+(см. global rules про Skill Scoping).
+
+Думай на Opus (main), делай на Sonnet (субагент). Автомод, автономно.
+Не трогай hosting/webhook/bot config — всё рабочее. Только визуал подарков + коллекционок.
+
+Бот @boxly_game_bot (ID 8705283199), токен в .env.local (`TELEGRAM_BOT_TOKEN`).
+```
+
+---
+
+## Команды для быстрого старта новой сессии
+
+```bash
+cd /Users/andrejpetrusihin/develop/personal/boxly
+cat HANDOFF.md
+source .env.local && curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getMe"
+git pull
+npm run dev   # локальный дев на 5173 (или 5174)
 ```
