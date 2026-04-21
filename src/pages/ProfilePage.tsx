@@ -17,9 +17,10 @@ export function ProfilePage(): JSX.Element {
   const collected = COLLECTIBLE_IDS.filter((id) => (player.collection[id] ?? 0) > 0).length;
   const tgUser = getTelegramUser();
 
-  const xpPrev = totalXpToReach(player.level);
+  // WHY: level 1 starts at 0 XP even though totalXpToReach(1)=100 — special-case or display shows negative.
+  const xpPrev = player.level <= 1 ? 0 : totalXpToReach(player.level);
   const xpNext = totalXpToReach(player.level + 1);
-  const curXp = player.xpTotal - xpPrev;
+  const curXp = Math.max(0, player.xpTotal - xpPrev);
   const xpNeeded = xpNext - xpPrev;
   const xpPct = xpNeeded > 0 ? Math.min(100, (curXp / xpNeeded) * 100) : 0;
 

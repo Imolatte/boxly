@@ -24,9 +24,10 @@ export function TopHud(): JSX.Element {
     return () => clearInterval(id);
   }, [atCap]);
 
-  const xpPrevLevel = totalXpToReach(player.level);
+  // WHY: level 1 starts at 0 XP even though totalXpToReach(1)=100 — special-case or display shows negative.
+  const xpPrevLevel = player.level <= 1 ? 0 : totalXpToReach(player.level);
   const xpNextLevel = totalXpToReach(player.level + 1);
-  const xpInLevel = player.xpTotal - xpPrevLevel;
+  const xpInLevel = Math.max(0, player.xpTotal - xpPrevLevel);
   const xpNextInLevel = xpNextLevel - xpPrevLevel;
   const xpPct = xpNextInLevel > 0 ? Math.min(100, (xpInLevel / xpNextInLevel) * 100) : 0;
 

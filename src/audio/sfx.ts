@@ -15,7 +15,12 @@ let ctx: AudioContext | null = null;
 function getCtx(): AudioContext | null {
   try {
     if (!ctx) {
-      ctx = new AudioContext();
+      // WHY: iOS Safari/WKWebView needs webkit prefix before 14.5
+      const AudioCtx =
+        (globalThis as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ||
+        (globalThis as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return null;
+      ctx = new AudioCtx();
     }
     if (ctx.state === 'suspended') {
       void ctx.resume();

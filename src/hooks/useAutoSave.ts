@@ -6,7 +6,6 @@ export function useAutoSave(): void {
   useEffect(() => {
     return useGameStore.subscribe((state) => {
       debouncedSave({
-        v: 1,
         board: state.board,
         player: state.player,
         meta: state.meta,
