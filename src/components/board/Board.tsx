@@ -23,9 +23,14 @@ function DragPreview({ item }: { item: GiftItem }): JSX.Element {
   return (
     <div
       className="w-14 h-14 flex items-center justify-center rounded-xl opacity-90 shadow-lg"
-      style={{ background: bg, border: '1.5px solid rgba(0,0,0,0.1)' }}
+      style={{
+        background: bg,
+        border: '1.5px solid rgba(0,0,0,0.1)',
+        willChange: 'transform',
+        transform: 'translateZ(0)',
+      }}
     >
-      <Icon icon={icon} width={26} height={26} style={{ color: 'rgba(42,38,32,0.75)' }} />
+      <Icon icon={icon} width={26} height={26} />
     </div>
   );
 }
@@ -47,11 +52,13 @@ export function Board(): JSX.Element {
     const { cellId } = event.active.data.current as { cellId: string };
     const cell = board.find((c) => c.id === cellId);
     setActiveDragItem(cell?.item ?? null);
+    document.body.classList.add('dnd-dragging');
     debugLog(`dragStart from=${cellId} item=${cell?.item?.kind ?? 'empty'}`);
   }
 
   function handleDragEnd(event: DragEndEvent): void {
     setActiveDragItem(null);
+    document.body.classList.remove('dnd-dragging');
     const { over, active } = event;
     const fromCellId = (active.data.current as { cellId: string }).cellId;
     if (!over) {
