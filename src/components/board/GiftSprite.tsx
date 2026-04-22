@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Icon } from '@iconify/react';
-import { motion } from 'framer-motion';
 import type { GiftItem, GiftLevel } from '../../types/gift';
 import { GIFT_CONFIGS } from '../../config/gifts';
 import { COLLECTIBLE_CONFIGS } from '../../config/collectibles';
@@ -266,8 +265,19 @@ function GiftSpriteImpl({ item, cellId, isSelling = false }: GiftSpriteProps): J
     iconFilter = undefined;
   }
 
+  // --- Animation composition ---
+  // extraStyle.animation (collectible-glow, breathe) wins over sprite-enter by composing both.
+  // When isSelling, sprite-sell takes over entirely.
+  const { animation: existingAnim, ...restExtra } = extraStyle;
+  const baseAnim = isSelling
+    ? 'sprite-sell 0.2s ease-out forwards'
+    : 'sprite-enter 0.22s ease-out';
+  const composedAnim = !isSelling && typeof existingAnim === 'string'
+    ? `${baseAnim}, ${existingAnim}`
+    : baseAnim;
+
   return (
-    <motion.div
+    <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
@@ -278,19 +288,10 @@ function GiftSpriteImpl({ item, cellId, isSelling = false }: GiftSpriteProps): J
         touchAction: 'none',
         contain: 'layout paint style',
         willChange: 'transform',
-        ...extraStyle,
+        ...restExtra,
+        animation: composedAnim,
+        ...(isDragging ? { opacity: 0.3, transform: 'scale(0.95)' } : {}),
       }}
-      initial={{ y: -16, opacity: 0, scale: 0.85 }}
-      animate={
-        isSelling
-          ? { y: 0, opacity: 0, scale: 0.7 }
-          : { y: 0, opacity: isDragging ? 0.3 : 1, scale: isDragging ? 0.95 : 1 }
-      }
-      transition={
-        isSelling
-          ? { duration: 0.2 }
-          : { type: 'spring', stiffness: 300, damping: 22 }
-      }
     >
       <span
         style={{
@@ -314,7 +315,7 @@ function GiftSpriteImpl({ item, cellId, isSelling = false }: GiftSpriteProps): J
       {style.kind === 'intermediate' && (
         <IntermediateBadge color={darken(style.border, -10)} stage={style.stage ?? 1} />
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -331,4 +332,3 @@ export const GiftSprite = memo(GiftSpriteImpl, (prev, next) => {
   }
   return false;
 });
-

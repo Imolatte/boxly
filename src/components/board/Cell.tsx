@@ -1,5 +1,4 @@
 import { useDroppable } from '@dnd-kit/core';
-import { AnimatePresence } from 'framer-motion';
 import type { BoardCell } from '../../types/board';
 import { GiftSprite } from './GiftSprite';
 import { MergeFx } from './MergeFx';
@@ -65,24 +64,20 @@ export function Cell({ cell, isSelected, onSelect, fx, mergePreview = false }: C
         ...bgStyle,
       }}
     >
-      <AnimatePresence>
-        {hasItem ? (
-          <div
-            key={
-              cell.item!.kind === 'collectible'
-                ? cell.item!.id
-                : `${cell.item!.kind}_${'level' in cell.item! ? cell.item!.level : 0}`
-            }
-            className="w-full h-full p-1"
-          >
-            <GiftSprite item={cell.item!} cellId={cell.id} />
-          </div>
-        ) : null}
-      </AnimatePresence>
+      {hasItem ? (
+        <div
+          key={
+            cell.item!.kind === 'collectible'
+              ? cell.item!.id
+              : `${cell.item!.kind}_${'level' in cell.item! ? cell.item!.level : 0}`
+          }
+          className="w-full h-full p-1"
+        >
+          <GiftSprite item={cell.item!} cellId={cell.id} />
+        </div>
+      ) : null}
 
-      <AnimatePresence>
-        {fx ? <MergeFx key={fx.id} type={fx.type} /> : null}
-      </AnimatePresence>
+      {fx ? <MergeFx key={fx.id} type={fx.type} /> : null}
     </div>
   );
 }
