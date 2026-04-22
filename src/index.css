@@ -78,7 +78,7 @@
 /* Performance: disable heavy effects while user drags a tile */
 body.dnd-dragging [style*="animation"],
 body.dnd-dragging [class*="animate-"] {
-  animation: none !important;
+  animation-play-state: paused !important;
 }
 body.dnd-dragging [style*="backdrop"],
 body.dnd-dragging [style*="Backdrop"] {
