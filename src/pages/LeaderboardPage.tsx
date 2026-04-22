@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
-import { fetchTopPlayers, type LeaderboardEntry, type MyRank } from '../leaderboard/client';
+import { fetchTopPlayers, submitScore, type LeaderboardEntry, type MyRank } from '../leaderboard/client';
 import { getTelegramUser } from '../telegram/sdk';
+import { useGameStore } from '../store/gameStore';
 
 interface RowProps {
   rank: number;
@@ -75,7 +76,10 @@ export function LeaderboardPage(): JSX.Element {
   useEffect(() => {
     let cancelled = false;
     setError(false);
-    fetchTopPlayers()
+    const { player } = useGameStore.getState();
+    // Push current score first so user shows up on top immediately
+    submitScore(player.level, player.xpTotal)
+      .then(() => fetchTopPlayers())
       .then((res) => {
         if (cancelled) return;
         setEntries(res.entries);

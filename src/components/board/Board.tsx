@@ -6,7 +6,6 @@ import { Cell } from './Cell';
 import type { GiftItem } from '../../types/gift';
 import { GIFT_CONFIGS } from '../../config/gifts';
 import { COLLECTIBLE_CONFIGS } from '../../config/collectibles';
-import { debugLog } from '../common/DebugPanel';
 
 function getDragIcon(item: GiftItem): { icon: string; color: string; bg: string } {
   if (item.kind === 'collectible') {
@@ -52,7 +51,6 @@ export function Board(): JSX.Element {
     const cell = board.find((c) => c.id === cellId);
     setActiveDragItem(cell?.item ?? null);
     document.body.classList.add('dnd-dragging');
-    debugLog(`dragStart from=${cellId} item=${cell?.item?.kind ?? 'empty'}`);
   }
 
   function handleDragEnd(event: DragEndEvent): void {
@@ -60,13 +58,8 @@ export function Board(): JSX.Element {
     document.body.classList.remove('dnd-dragging');
     const { over, active } = event;
     const fromCellId = (active.data.current as { cellId: string }).cellId;
-    if (!over) {
-      debugLog(`dragEnd from=${fromCellId} over=null (dropped in void)`);
-      return;
-    }
+    if (!over) return;
     const toCellId = (over.data.current as { cellId: string }).cellId;
-    debugLog(`dragEnd ${fromCellId} -> ${toCellId}`);
-
     if (fromCellId !== toCellId) {
       tryMerge(fromCellId, toCellId);
     }
