@@ -1,4 +1,5 @@
 import { getInitData, isTelegramEnv } from '../telegram/sdk';
+import { debugLog } from '../components/common/DebugPanel';
 
 const BASE = 'https://boxly-webhook.vercel.app/api';
 
@@ -10,18 +11,27 @@ export interface LeaderboardEntry {
 }
 
 export async function submitScore(level: number, xpTotal: number): Promise<void> {
-  if (!isTelegramEnv()) return;
+  if (!isTelegramEnv()) {
+    debugLog(`lb submit skipped: not in Telegram env`);
+    return;
+  }
   const initData = getInitData();
-  if (!initData) return;
+  if (!initData) {
+    debugLog(`lb submit skipped: no initData`);
+    return;
+  }
+  debugLog(`lb submit: lvl=${level} xp=${xpTotal} initDataLen=${initData.length}`);
   try {
-    await fetch(`${BASE}/leaderboard-submit`, {
+    const res = await fetch(`${BASE}/leaderboard-submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ initData, level, xpTotal }),
       keepalive: true,
     });
-  } catch {
-    // Silent fail — leaderboard is non-critical
+    const text = await res.text().catch(() => '');
+    debugLog(`lb submit resp ${res.status}: ${text.slice(0, 120)}`);
+  } catch (e) {
+    debugLog(`lb submit error: ${(e as Error).message ?? 'unknown'}`);
   }
 }
 
