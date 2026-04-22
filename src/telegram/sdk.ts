@@ -35,3 +35,7 @@ export function getTelegramUser(): {
 export function isTelegramEnv(): boolean {
   return Boolean(window.Telegram?.WebApp?.initData);
 }
+
+export function getInitData(): string {
+  return window.Telegram?.WebApp?.initData ?? '';
+}

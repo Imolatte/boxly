@@ -15,6 +15,7 @@ import { impact, notification } from '../telegram/haptics';
 import { sfx } from '../audio/sfx';
 import { GIFT_CONFIGS } from '../config/gifts';
 import { COLLECTIBLE_CONFIGS } from '../config/collectibles';
+import { submitScore } from '../leaderboard/client';
 
 function makeEmptyBoard(): Board {
   const cells: BoardCell[] = [];
@@ -327,6 +328,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   showLevelUp(level, energyBonus) {
     notification('success');
     set((s) => ({ ui: { ...s.ui, levelUp: { level, energyBonus } } }));
+    const { player } = get();
+    void submitScore(player.level, player.xpTotal);
   },
 
   dismissLevelUp() {

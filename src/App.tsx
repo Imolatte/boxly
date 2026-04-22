@@ -7,6 +7,7 @@ import { LevelUpOverlay } from './components/levelup/LevelUpOverlay';
 import { OnboardingOverlay } from './components/onboarding/OnboardingOverlay';
 import { GamePage } from './pages/GamePage';
 import { CollectionPage } from './pages/CollectionPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { InfoPage } from './pages/InfoPage';
 import { useTelegramBackButton } from './hooks/useTelegramBackButton';
@@ -34,6 +35,7 @@ export function App(): JSX.Element {
       >
         {activeTab === 'game' ? <GamePage /> : null}
         {activeTab === 'collection' ? <CollectionPage /> : null}
+        {activeTab === 'leaderboard' ? <LeaderboardPage /> : null}
         {activeTab === 'info' ? <InfoPage /> : null}
         {activeTab === 'profile' ? <ProfilePage /> : null}
       </main>

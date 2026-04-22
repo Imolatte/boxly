@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@iconify/react';
 
-export type TabId = 'game' | 'collection' | 'info' | 'profile';
+export type TabId = 'game' | 'collection' | 'leaderboard' | 'info' | 'profile';
 
 interface TabBarProps {
   active: TabId;
@@ -11,6 +11,7 @@ interface TabBarProps {
 const TABS: { id: TabId; label: string; icon: string; iconActive: string }[] = [
   { id: 'game', label: 'Игра', icon: 'ph:game-controller', iconActive: 'ph:game-controller-fill' },
   { id: 'collection', label: 'Коллекция', icon: 'ph:books', iconActive: 'ph:books-fill' },
+  { id: 'leaderboard', label: 'Топ', icon: 'ph:trophy', iconActive: 'ph:trophy-fill' },
   { id: 'info', label: 'Инфо', icon: 'ph:info', iconActive: 'ph:info-fill' },
   { id: 'profile', label: 'Профиль', icon: 'ph:user-circle', iconActive: 'ph:user-circle-fill' },
 ];
