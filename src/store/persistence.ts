@@ -3,7 +3,7 @@ import type { PlayerState } from '../types/player';
 import { getStorage } from '../storage/storage';
 
 const SAVE_KEY = 'boxly_save_v1';
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 
 export interface SaveData {
   board: Board;
