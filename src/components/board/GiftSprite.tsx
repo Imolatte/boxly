@@ -25,6 +25,13 @@ function darken(hex: string, amount: number): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
+function lighten(hex: string, amount: number): string {
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + amount);
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + amount);
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + amount);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
 interface SpriteStyle {
   bg: string;
   border: string;
@@ -187,14 +194,14 @@ export function GiftSprite({ item, cellId, isSelling = false }: GiftSpriteProps)
       background: style.bg,
     };
   } else if (style.kind === 'complete') {
-    // Soft gradient: near-white → tinted
+    // Saturated gradient: lighter top → full color bottom
     bgStyle = {
-      background: `linear-gradient(135deg, #FFFFFF, ${hexToRgba(style.bg, 0.72)})`,
+      background: `linear-gradient(135deg, ${lighten(style.bg, 20)} 0%, ${style.bg} 100%)`,
     };
   } else {
-    // collectible: soft cream base, gold outline handles the flair
+    // collectible: bold color gradient with gold halo
     bgStyle = {
-      background: `linear-gradient(135deg, #FFFDF7, ${hexToRgba(style.bg, 0.65)})`,
+      background: `radial-gradient(circle at 30% 25%, ${lighten(style.bg, 30)} 0%, ${style.bg} 55%, ${darken(style.bg, 15)} 100%)`,
     };
   }
 
@@ -216,18 +223,18 @@ export function GiftSprite({ item, cellId, isSelling = false }: GiftSpriteProps)
   if (isCollectible) {
     extraStyle = {
       animation: 'collectible-glow 2.2s ease-in-out infinite',
-      outline: '2px solid #E8B97A',
+      outline: '2.5px solid #E8B97A',
       outlineOffset: '1px',
-      boxShadow: '0 0 0 1px rgba(232,185,122,0.35), 0 3px 12px rgba(232,185,122,0.3)',
+      boxShadow: `0 0 0 1px rgba(232,185,122,0.5), 0 4px 14px ${hexToRgba(style.bg, 0.55)}, inset 0 1px 0 rgba(255,255,255,0.6)`,
     };
   } else if (isHighLevel) {
     extraStyle = {
       animation: 'breathe 3s ease-in-out infinite',
-      boxShadow: `0 3px 12px ${hexToRgba(style.border, 0.45)}`,
+      boxShadow: `0 4px 14px ${hexToRgba(style.border, 0.55)}, inset 0 1px 0 rgba(255,255,255,0.4)`,
     };
   } else if (style.kind === 'complete') {
     extraStyle = {
-      boxShadow: `0 3px 10px rgba(0,0,0,0.08)`,
+      boxShadow: `0 3px 10px ${hexToRgba(style.border, 0.35)}, inset 0 1px 0 rgba(255,255,255,0.4)`,
     };
   } else if (style.kind === 'intermediate' && style.stage === 2) {
     // Subtle inset highlight on top edge for stage 2

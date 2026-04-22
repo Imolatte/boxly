@@ -17,16 +17,57 @@ function Chip({ icon, color, label, dimmed = false }: ChipProps): JSX.Element {
       style={{
         background: dimmed ? 'rgba(229,223,214,0.35)' : `${color}55`,
         border: `1px solid ${color}88`,
-        opacity: dimmed ? 0.7 : 1,
         minWidth: 44,
       }}
     >
-      <Icon icon={icon} width={22} height={22} style={{ color: dimmed ? '#9e9992' : color }} />
+      <Icon
+        icon={icon}
+        width={22}
+        height={22}
+        style={dimmed ? { filter: 'grayscale(0.7)', opacity: 0.55 } : undefined}
+      />
       <span
         className="text-[9px] font-semibold leading-none text-center"
         style={{ color: dimmed ? '#9e9992' : '#2a2620', maxWidth: 52 }}
       >
         {label}
+      </span>
+    </div>
+  );
+}
+
+interface IntermediateChipProps {
+  icon: string;
+  color: string;
+  level: number;
+  stage: 1 | 2;
+}
+
+function IntermediateChip({ icon, color, level, stage }: IntermediateChipProps): JSX.Element {
+  const badge = stage === 2 ? 'ph:circle-three-quarters-fill' : 'ph:circle-half-fill';
+  return (
+    <div
+      className="flex flex-col items-center gap-0.5 rounded-xl px-2 py-1.5"
+      style={{
+        background: `${color}${stage === 2 ? 'aa' : '77'}`,
+        border: `1px solid ${color}cc`,
+        minWidth: 44,
+      }}
+    >
+      <div className="relative">
+        <Icon icon={icon} width={22} height={22} style={{ opacity: stage === 2 ? 0.9 : 0.75 }} />
+        <div
+          className="absolute -bottom-1 -right-1 rounded-full flex items-center justify-center"
+          style={{ background: '#fff', width: 12, height: 12, boxShadow: '0 0 0 1px rgba(0,0,0,0.08)' }}
+        >
+          <Icon icon={badge} width={9} height={9} style={{ color: '#4a413a' }} />
+        </div>
+      </div>
+      <span
+        className="text-[9px] font-semibold leading-none text-center"
+        style={{ color: '#2a2620', maxWidth: 52 }}
+      >
+        {`Промеж. ${level}`}
       </span>
     </div>
   );
@@ -65,7 +106,8 @@ function SectionCard({ children, title }: { children: React.ReactNode; title?: s
 }
 
 const SIMPLE_LEVELS: GiftLevel[] = [1, 2, 3, 4, 5];
-const INTERMEDIATE_LEVELS: GiftLevel[] = [6, 7, 8, 9, 10];
+const ONE_STAGE_LEVELS: GiftLevel[] = [6, 7];
+const TWO_STAGE_LEVELS: GiftLevel[] = [8, 9, 10];
 
 export function InfoPage(): JSX.Element {
   return (
@@ -97,10 +139,10 @@ export function InfoPage(): JSX.Element {
         </div>
       </SectionCard>
 
-      {/* Уровни 6-10: с промежуточным */}
-      <SectionCard title="Уровни 6-10 — с промежуточным этапом">
+      {/* Уровни 6-7: один промежуточный */}
+      <SectionCard title="Уровни 6-7 — один промежуточный этап">
         <div className="flex flex-col gap-2.5">
-          {INTERMEDIATE_LEVELS.map((lvl) => {
+          {ONE_STAGE_LEVELS.map((lvl) => {
             const cfg = GIFT_CONFIGS[lvl];
             return (
               <div key={lvl} className="flex items-center gap-2 flex-wrap">
@@ -108,9 +150,35 @@ export function InfoPage(): JSX.Element {
                 <Plus />
                 <Chip icon={cfg.icon} color={cfg.color} label={`Часть ${lvl}`} dimmed />
                 <Arrow />
-                <Chip icon="ph:circle-half-fill" color={cfg.color} label={`Промеж. ${lvl}`} />
+                <IntermediateChip icon={cfg.icon} color={cfg.color} level={lvl} stage={1} />
                 <Plus />
-                <Chip icon="ph:circle-half-fill" color={cfg.color} label={`Промеж. ${lvl}`} />
+                <IntermediateChip icon={cfg.icon} color={cfg.color} level={lvl} stage={1} />
+                <Arrow />
+                <Chip icon={cfg.icon} color={cfg.color} label={`Подарок ${lvl}`} />
+              </div>
+            );
+          })}
+        </div>
+      </SectionCard>
+
+      {/* Уровни 8-10: два промежуточных */}
+      <SectionCard title="Уровни 8-10 — два промежуточных этапа">
+        <div className="flex flex-col gap-2.5">
+          {TWO_STAGE_LEVELS.map((lvl) => {
+            const cfg = GIFT_CONFIGS[lvl];
+            return (
+              <div key={lvl} className="flex items-center gap-2 flex-wrap">
+                <Chip icon={cfg.icon} color={cfg.color} label={`Часть ${lvl}`} dimmed />
+                <Plus />
+                <Chip icon={cfg.icon} color={cfg.color} label={`Часть ${lvl}`} dimmed />
+                <Arrow />
+                <IntermediateChip icon={cfg.icon} color={cfg.color} level={lvl} stage={1} />
+                <Plus />
+                <IntermediateChip icon={cfg.icon} color={cfg.color} level={lvl} stage={1} />
+                <Arrow />
+                <IntermediateChip icon={cfg.icon} color={cfg.color} level={lvl} stage={2} />
+                <Plus />
+                <IntermediateChip icon={cfg.icon} color={cfg.color} level={lvl} stage={2} />
                 <Arrow />
                 <Chip icon={cfg.icon} color={cfg.color} label={`Подарок ${lvl}`} />
               </div>
@@ -192,21 +260,33 @@ export function InfoPage(): JSX.Element {
 
       {/* Коллекционки */}
       <SectionCard title="Коллекционки — 10 редких предметов">
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-5 gap-2.5">
           {Object.values(COLLECTIBLE_CONFIGS).map((cfg) => (
             <div key={cfg.id} className="flex flex-col items-center gap-1">
               <div
-                className="rounded-xl flex items-center justify-center"
+                className="rounded-2xl flex items-center justify-center relative"
                 style={{
-                  width: 44,
-                  height: 44,
-                  background: `${cfg.color}55`,
-                  border: `1px solid ${cfg.color}88`,
+                  width: 52,
+                  height: 52,
+                  background: `linear-gradient(135deg, ${cfg.color}ee 0%, ${cfg.color}aa 100%)`,
+                  border: '1.5px solid #E8B97A',
+                  boxShadow: `0 3px 10px ${cfg.color}55, inset 0 1px 0 rgba(255,255,255,0.5)`,
                 }}
               >
-                <Icon icon={cfg.icon} width={24} height={24} style={{ color: cfg.color }} />
+                <Icon icon={cfg.icon} width={34} height={34} />
+                <span
+                  className="absolute -top-1 -right-1 flex items-center justify-center rounded-full"
+                  style={{
+                    width: 16,
+                    height: 16,
+                    background: 'linear-gradient(135deg, #FFE8A0, #E8B97A)',
+                    boxShadow: '0 1px 4px rgba(232,185,122,0.6)',
+                  }}
+                >
+                  <Icon icon="ph:sparkle-fill" width={9} height={9} style={{ color: '#fff' }} />
+                </span>
               </div>
-              <span className="text-[9px] font-medium text-center leading-tight" style={{ color: 'rgba(42,38,32,0.7)' }}>
+              <span className="text-[10px] font-semibold text-center leading-tight" style={{ color: '#2a2620' }}>
                 {cfg.name}
               </span>
             </div>

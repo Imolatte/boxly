@@ -134,7 +134,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { part, placedAt, rouletteTriggered, rouletteReward } = result;
 
     let newBoard = board;
-    if (placedAt !== null) {
+    if (!rouletteTriggered && placedAt !== null) {
       newBoard = board.map((c) =>
         c.coord.x === placedAt.x && c.coord.y === placedAt.y ? { ...c, item: part } : c,
       );
