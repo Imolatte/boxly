@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 
 export type TabId = 'game' | 'collection' | 'leaderboard' | 'info' | 'profile';
@@ -38,25 +38,21 @@ export function TabBar({ active, onChange }: TabBarProps): JSX.Element {
             className="flex-1 min-h-14 py-2 flex flex-col items-center justify-center gap-0.5 relative"
             style={{ color: isActive ? '#E8B4A0' : 'rgba(42,38,32,0.38)', transition: 'color 0.2s' }}
           >
-            {/* Active pill indicator */}
-            <AnimatePresence>
-              {isActive && (
-                <motion.span
-                  layoutId="tab-pill"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 rounded-full"
-                  style={{
-                    width: 28,
-                    height: 3,
-                    background: 'linear-gradient(90deg, #F0C4B0 0%, #E8B4A0 50%, #D89A84 100%)',
-                    boxShadow: '0 1px 6px rgba(232,180,160,0.5)',
-                  }}
-                  initial={{ scaleX: 0.4, opacity: 0 }}
-                  animate={{ scaleX: 1, opacity: 1 }}
-                  exit={{ scaleX: 0.4, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                />
-              )}
-            </AnimatePresence>
+            {/* Active pill indicator — layoutId animates between tabs */}
+            {isActive && (
+              <motion.span
+                layoutId="tab-pill"
+                className="absolute top-0 rounded-full"
+                style={{
+                  width: 28,
+                  height: 3,
+                  left: 'calc(50% - 14px)',
+                  background: 'linear-gradient(90deg, #F0C4B0 0%, #E8B4A0 50%, #D89A84 100%)',
+                  boxShadow: '0 1px 6px rgba(232,180,160,0.5)',
+                }}
+                transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+              />
+            )}
 
             <Icon
               icon={isActive ? tab.iconActive : tab.icon}
