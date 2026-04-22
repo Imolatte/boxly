@@ -128,7 +128,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const chargedPlayer: PlayerState = {
       ...regenedPlayer,
       energy: regenedPlayer.energy - CREATE_COST,
-      energyUpdatedAt: now,
     };
 
     const result = dropPart(board);
