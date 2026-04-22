@@ -140,14 +140,10 @@ export function RouletteModal(): JSX.Element | null {
     prevRewardRef.current = activeRoulette;
 
     const targetSector = rewardToSectorIndex(activeRoulette);
-    // Arrow points up (top of SVG). Wheel rotates clockwise.
-    // Sector 0 starts at -90deg. After rotation R, sector i center is at:
-    // (i * SECTOR_ANGLE + SECTOR_ANGLE/2 - 90 + R) mod 360
-    // We want this to equal 0 (pointing up, i.e. 0 or 360)
-    // R = 90 - i * SECTOR_ANGLE - SECTOR_ANGLE/2 + k*360
-    const targetCenter = targetSector * SECTOR_ANGLE + SECTOR_ANGLE / 2;
-    const finalAngle = 90 - targetCenter;
-    // Add 5 full spins for visual effect
+    // Arrow points up, which in SVG coordinates is -90deg.
+    // Sector i center at rotation R sits at: (i*36 + 18 - 90 + R) mod 360.
+    // Solve for it ≡ -90: R = -(i*36 + 18) mod 360.
+    const finalAngle = -(targetSector * SECTOR_ANGLE + SECTOR_ANGLE / 2);
     const spins = 5 * 360;
     const normalized = ((finalAngle % 360) + 360) % 360;
     const totalRotation = spins + normalized;
