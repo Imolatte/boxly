@@ -29,7 +29,22 @@ export async function submitScore(level: number, xpTotal: number): Promise<void>
       keepalive: true,
     });
     const text = await res.text().catch(() => '');
-    debugLog(`lb submit resp ${res.status}: ${text.slice(0, 120)}`);
+    debugLog(`lb submit resp ${res.status}: ${text.slice(0, 140)}`);
+
+    // On 401 — also call debug-verify to see HMAC detail
+    if (res.status === 401) {
+      try {
+        const dbg = await fetch(`${BASE}/debug-verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData }),
+        });
+        const dbgText = await dbg.text();
+        debugLog(`hmac dbg: ${dbgText.slice(0, 400)}`);
+      } catch {
+        // ignore
+      }
+    }
   } catch (e) {
     debugLog(`lb submit error: ${(e as Error).message ?? 'unknown'}`);
   }
