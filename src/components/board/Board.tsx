@@ -1,7 +1,6 @@
 import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { useState } from 'react';
-import { Icon } from '@iconify/react';
 import { useGameStore } from '../../store/gameStore';
 import { Cell } from './Cell';
 import type { GiftItem } from '../../types/gift';
@@ -30,7 +29,7 @@ function DragPreview({ item }: { item: GiftItem }): JSX.Element {
         transform: 'translateZ(0)',
       }}
     >
-      <Icon icon={icon} width={26} height={26} />
+      <span style={{ fontSize: 30, lineHeight: 1, userSelect: 'none' }}>{icon}</span>
     </div>
   );
 }

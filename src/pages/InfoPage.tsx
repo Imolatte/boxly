@@ -20,12 +20,16 @@ function Chip({ icon, color, label, dimmed = false }: ChipProps): JSX.Element {
         minWidth: 44,
       }}
     >
-      <Icon
-        icon={icon}
-        width={dimmed ? 18 : 22}
-        height={dimmed ? 18 : 22}
-        style={{ opacity: dimmed ? 0.8 : 1 }}
-      />
+      <span
+        style={{
+          fontSize: dimmed ? 18 : 22,
+          lineHeight: 1,
+          opacity: dimmed ? 0.8 : 1,
+          userSelect: 'none',
+        }}
+      >
+        {icon}
+      </span>
       <span
         className="text-[9px] font-semibold leading-none text-center"
         style={{ color: '#2a2620', maxWidth: 52 }}
@@ -55,7 +59,17 @@ function IntermediateChip({ icon, color, level, stage }: IntermediateChipProps):
       }}
     >
       <div className="relative">
-        <Icon icon={icon} width={22} height={22} style={{ opacity: stage === 2 ? 0.9 : 0.75 }} />
+        <span
+          style={{
+            fontSize: 22,
+            lineHeight: 1,
+            opacity: stage === 2 ? 0.9 : 0.75,
+            userSelect: 'none',
+            display: 'block',
+          }}
+        >
+          {icon}
+        </span>
         <div
           className="absolute -bottom-1 -right-1 rounded-full flex items-center justify-center"
           style={{ background: '#fff', width: 12, height: 12, boxShadow: '0 0 0 1px rgba(0,0,0,0.08)' }}
@@ -273,7 +287,7 @@ export function InfoPage(): JSX.Element {
                   boxShadow: `0 3px 10px ${cfg.color}55, inset 0 1px 0 rgba(255,255,255,0.5)`,
                 }}
               >
-                <Icon icon={cfg.icon} width={34} height={34} />
+                <span style={{ fontSize: 34, lineHeight: 1, userSelect: 'none' }}>{cfg.icon}</span>
                 <span
                   className="absolute -top-1 -right-1 flex items-center justify-center rounded-full"
                   style={{

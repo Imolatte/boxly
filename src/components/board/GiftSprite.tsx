@@ -292,17 +292,18 @@ function GiftSpriteImpl({ item, cellId, isSelling = false }: GiftSpriteProps): J
           : { type: 'spring', stiffness: 300, damping: 22 }
       }
     >
-      <Icon
-        icon={style.icon}
-        width={iconSize}
-        height={iconSize}
+      <span
         style={{
+          fontSize: iconSize,
+          lineHeight: 1,
           opacity: style.iconOpacity,
-          display: 'block',
           filter: iconFilter,
-          // No `color` prop — fluent-emoji are multicolor SVG, color would override fills
+          display: 'block',
+          userSelect: 'none',
         }}
-      />
+      >
+        {style.icon}
+      </span>
 
       {style.kind === 'collectible' && (
         <CollectibleBadge color="#B8860B" />
