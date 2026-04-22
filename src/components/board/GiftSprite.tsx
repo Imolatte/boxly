@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
@@ -147,25 +148,29 @@ function PartBadge({ color }: { color: string }): JSX.Element {
   );
 }
 
-function IntermediateBadge({ color, stage }: { color: string; stage: 1 | 2 }): JSX.Element {
+function IntermediateBadge({ stage }: { color: string; stage: 1 | 2 }): JSX.Element {
   const icon = stage === 2 ? 'ph:circle-three-quarters-fill' : 'ph:circle-half-fill';
-  const opacity = stage === 2 ? 0.92 : 0.75;
   return (
     <span
-      className="absolute bottom-0.5 right-0.5 flex items-center justify-center"
-      style={{ width: 14, height: 14 }}
+      className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full"
+      style={{
+        width: 16,
+        height: 16,
+        background: '#fff',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.08)',
+      }}
     >
       <Icon
         icon={icon}
         width={11}
         height={11}
-        style={{ color, opacity, display: 'block' }}
+        style={{ color: '#4a413a', display: 'block' }}
       />
     </span>
   );
 }
 
-export function GiftSprite({ item, cellId, isSelling = false }: GiftSpriteProps): JSX.Element {
+function GiftSpriteImpl({ item, cellId, isSelling = false }: GiftSpriteProps): JSX.Element {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `drag_${cellId}`,
     data: { cellId },
@@ -311,3 +316,18 @@ export function GiftSprite({ item, cellId, isSelling = false }: GiftSpriteProps)
     </motion.div>
   );
 }
+
+export const GiftSprite = memo(GiftSpriteImpl, (prev, next) => {
+  if (prev.cellId !== next.cellId || prev.isSelling !== next.isSelling) return false;
+  const a = prev.item;
+  const b = next.item;
+  if (a.kind !== b.kind) return false;
+  if (a.kind === 'collectible' && b.kind === 'collectible') return a.id === b.id;
+  if ('level' in a && 'level' in b) {
+    if (a.level !== b.level) return false;
+    if (a.kind === 'intermediate' && b.kind === 'intermediate') return a.stage === b.stage;
+    return true;
+  }
+  return false;
+});
+
