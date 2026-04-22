@@ -61,10 +61,10 @@ function resolveStyle(item: GiftItem): SpriteStyle {
 
   if (item.kind === 'part') {
     return {
-      bg: hexToRgba(cfg.color, 0.38),
-      border: hexToRgba(darken(cfg.color, 20), 0.5),
+      bg: cfg.color,
+      border: darken(cfg.color, 25),
       iconColor: darken(cfg.color, 80),
-      iconOpacity: 0.45,
+      iconOpacity: 0.85,
       icon: cfg.icon,
       kind: 'part',
       level,
@@ -98,7 +98,7 @@ function resolveStyle(item: GiftItem): SpriteStyle {
   };
 }
 
-// Icon sizes per kind/stage
+// Icon sizes per kind/stage/level — smaller = "less complete"
 function resolveIconSize(
   kind: SpriteStyle['kind'],
   stage?: 1 | 2,
@@ -106,9 +106,14 @@ function resolveIconSize(
 ): number {
   if (kind === 'collectible') return 36;
   if (kind === 'complete') return level && level >= 7 ? 34 : 32;
-  if (kind === 'intermediate') return stage === 2 ? 32 : 28;
-  // part
-  return 22;
+  if (kind === 'intermediate') {
+    if (stage === 2) return 30;
+    return level && level >= 8 ? 24 : 28;
+  }
+  // part: smaller for levels with more merge steps ahead
+  if (level && level >= 8) return 20;
+  if (level && level >= 6) return 22;
+  return 24;
 }
 
 function CollectibleBadge({ color }: { color: string }): JSX.Element {
@@ -177,16 +182,15 @@ export function GiftSprite({ item, cellId, isSelling = false }: GiftSpriteProps)
   let bgStyle: React.CSSProperties;
 
   if (style.kind === 'part') {
-    // Greyscale tinted stripes on near-white base
+    // Tinted bg at 45% with subtle diagonal stripes overlay
     bgStyle = {
       backgroundImage: `repeating-linear-gradient(
         -45deg,
-        ${hexToRgba(style.border, 0.22)} 0px,
-        ${hexToRgba(style.border, 0.22)} 1.5px,
+        rgba(255,255,255,0.22) 0px,
+        rgba(255,255,255,0.22) 1.5px,
         transparent 1.5px,
-        transparent 7px
-      ), linear-gradient(135deg, rgba(255,255,255,0.60), ${hexToRgba(style.border, 0.22)})`,
-      filter: 'grayscale(0.65)',
+        transparent 8px
+      ), linear-gradient(135deg, ${hexToRgba(style.bg, 0.5)}, ${hexToRgba(style.bg, 0.3)})`,
     };
   } else if (style.kind === 'intermediate') {
     // Solid tinted with inset top highlight for stage 2

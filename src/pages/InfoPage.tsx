@@ -13,22 +13,22 @@ interface ChipProps {
 function Chip({ icon, color, label, dimmed = false }: ChipProps): JSX.Element {
   return (
     <div
-      className="flex flex-col items-center gap-0.5 rounded-xl px-2 py-1.5"
+      className="flex flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 relative"
       style={{
-        background: dimmed ? 'rgba(229,223,214,0.35)' : `${color}55`,
-        border: `1px solid ${color}88`,
+        background: dimmed ? `${color}44` : `${color}aa`,
+        border: dimmed ? `1.5px dashed ${color}99` : `1px solid ${color}cc`,
         minWidth: 44,
       }}
     >
       <Icon
         icon={icon}
-        width={22}
-        height={22}
-        style={dimmed ? { filter: 'grayscale(0.7)', opacity: 0.55 } : undefined}
+        width={dimmed ? 18 : 22}
+        height={dimmed ? 18 : 22}
+        style={{ opacity: dimmed ? 0.8 : 1 }}
       />
       <span
         className="text-[9px] font-semibold leading-none text-center"
-        style={{ color: dimmed ? '#9e9992' : '#2a2620', maxWidth: 52 }}
+        style={{ color: '#2a2620', maxWidth: 52 }}
       >
         {label}
       </span>
