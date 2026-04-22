@@ -5,7 +5,15 @@ export function useEnergyTick(): void {
   const tick = useGameStore((s) => s.tickEnergyRegen);
 
   useEffect(() => {
-    const id = setInterval(tick, 30000);
-    return () => clearInterval(id);
+    tick();
+    const id = setInterval(tick, 5000);
+    const onVisible = (): void => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [tick]);
 }
