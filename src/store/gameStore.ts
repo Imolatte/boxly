@@ -9,7 +9,7 @@ import { applyXp } from '../engine/xp';
 import { dropPart } from '../engine/dropPart';
 import { canMerge, doMerge } from '../engine/merge';
 import { sellValue } from '../engine/sell';
-import { loadSave, debouncedSave, clearSave } from './persistence';
+import { loadSave, debouncedSave } from './persistence';
 import { useToastStore } from './toastStore';
 import { impact, notification } from '../telegram/haptics';
 import { sfx } from '../audio/sfx';
@@ -272,8 +272,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   resetProgress() {
-    void clearSave();
-    set(makeDefaultState());
+    const prevUi = get().ui;
+    const fresh = makeDefaultState();
+    // Keep onboarding + sound preference — user already configured them.
+    const preservedUi = {
+      ...fresh.ui,
+      onboardingStep: prevUi.onboardingStep,
+      soundEnabled: prevUi.soundEnabled,
+    };
+    set({ ...fresh, ui: preservedUi });
+    // Persist new empty board with preserved ui so next reload keeps it.
+    debouncedSave({
+      board: fresh.board,
+      player: fresh.player,
+      meta: fresh.meta,
+      ui: { onboardingStep: prevUi.onboardingStep, soundEnabled: prevUi.soundEnabled },
+    });
   },
 
   pushFx(type, cellIdx) {
