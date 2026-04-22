@@ -97,7 +97,7 @@ export function Board(): JSX.Element {
           );
         })}
       </div>
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {activeDragItem !== null ? <DragPreview item={activeDragItem} /> : null}
       </DragOverlay>
     </DndContext>
