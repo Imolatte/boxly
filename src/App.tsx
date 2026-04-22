@@ -8,6 +8,7 @@ import { OnboardingOverlay } from './components/onboarding/OnboardingOverlay';
 import { GamePage } from './pages/GamePage';
 import { CollectionPage } from './pages/CollectionPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { InfoPage } from './pages/InfoPage';
 import { useTelegramBackButton } from './hooks/useTelegramBackButton';
 import { DebugPanel, debugLog } from './components/common/DebugPanel';
 
@@ -33,6 +34,7 @@ export function App(): JSX.Element {
       >
         {activeTab === 'game' ? <GamePage /> : null}
         {activeTab === 'collection' ? <CollectionPage /> : null}
+        {activeTab === 'info' ? <InfoPage /> : null}
         {activeTab === 'profile' ? <ProfilePage /> : null}
       </main>
 

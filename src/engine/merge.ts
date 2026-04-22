@@ -27,20 +27,41 @@ export function doMerge(a: GiftItem, b: GiftItem, rnd = Math.random): MergeResul
         xpGained: L * L,
       };
     } else {
-      // L >= 6: produce intermediate
+      // L >= 6: produce intermediate stage=1
       const level = L as 6 | 7 | 8 | 9 | 10;
       return {
         ok: true,
-        produced: { kind: 'intermediate', level },
+        produced: { kind: 'intermediate', level, stage: 1 },
         xpGained: L,
       };
     }
   }
 
-  // Scenario 3: intermediate + intermediate same level
+  // Scenario 3: intermediate + intermediate same level & same stage
   if (a.kind === 'intermediate' && b.kind === 'intermediate') {
     if (a.level !== b.level) return { ok: false };
+    if (a.stage !== b.stage) return { ok: false };
     const L = a.level;
+    const stage = a.stage;
+
+    if (stage === 1) {
+      // lvl 6-7: stage 1 -> complete
+      if (L <= 7) {
+        return {
+          ok: true,
+          produced: { kind: 'complete', level: L as GiftLevel },
+          xpGained: L * L,
+        };
+      }
+      // lvl 8-10: stage 1 -> stage 2
+      return {
+        ok: true,
+        produced: { kind: 'intermediate', level: L, stage: 2 },
+        xpGained: L,
+      };
+    }
+
+    // stage === 2 (only valid for lvl 8-10) -> complete
     return {
       ok: true,
       produced: { kind: 'complete', level: L as GiftLevel },

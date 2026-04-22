@@ -3,12 +3,13 @@ import type { PlayerState } from '../types/player';
 import { getStorage } from '../storage/storage';
 
 const SAVE_KEY = 'boxly_save_v1';
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 
 export interface SaveData {
   board: Board;
   player: PlayerState;
   meta: { version: number; createdAt: number; lastPlayedAt: number };
+  ui: { onboardingStep: number; soundEnabled: boolean };
 }
 
 interface StoredSave extends SaveData {
@@ -21,7 +22,12 @@ export async function loadSave(): Promise<SaveData | null> {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as StoredSave;
     if (parsed.v !== SAVE_VERSION) return null;
-    return { board: parsed.board, player: parsed.player, meta: parsed.meta };
+    return {
+      board: parsed.board,
+      player: parsed.player,
+      meta: parsed.meta,
+      ui: parsed.ui,
+    };
   } catch {
     return null;
   }

@@ -30,31 +30,85 @@ describe('merge - valid scenarios', () => {
     expect(r.xpGained).toBe(9);
   });
 
-  it('part(6) + part(6) -> intermediate(6), xp=6', () => {
+  it('part(6) + part(6) -> intermediate(6) stage=1, xp=6', () => {
     const a: GiftItem = { kind: 'part', level: 6 };
     const r = doMerge(a, a);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.produced).toEqual({ kind: 'intermediate', level: 6 });
+    expect(r.produced).toEqual({ kind: 'intermediate', level: 6, stage: 1 });
     expect(r.xpGained).toBe(6);
   });
 
-  it('part(10) + part(10) -> intermediate(10), xp=10', () => {
+  it('part(10) + part(10) -> intermediate(10) stage=1, xp=10', () => {
     const a: GiftItem = { kind: 'part', level: 10 };
     const r = doMerge(a, a);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.produced).toEqual({ kind: 'intermediate', level: 10 });
+    expect(r.produced).toEqual({ kind: 'intermediate', level: 10, stage: 1 });
     expect(r.xpGained).toBe(10);
   });
 
-  it('intermediate(8) + intermediate(8) -> complete(8), xp=64', () => {
-    const a: GiftItem = { kind: 'intermediate', level: 8 };
+  it('part(8) + part(8) -> intermediate(8) stage=1, xp=8', () => {
+    const a: GiftItem = { kind: 'part', level: 8 };
+    const r = doMerge(a, a);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.produced).toEqual({ kind: 'intermediate', level: 8, stage: 1 });
+    expect(r.xpGained).toBe(8);
+  });
+
+  it('2 intermediate lvl 6 stage 1 -> complete(6), xp=36', () => {
+    const a: GiftItem = { kind: 'intermediate', level: 6, stage: 1 };
+    const r = doMerge(a, a);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.produced).toEqual({ kind: 'complete', level: 6 });
+    expect(r.xpGained).toBe(36);
+  });
+
+  it('2 intermediate lvl 7 stage 1 -> complete(7), xp=49', () => {
+    const a: GiftItem = { kind: 'intermediate', level: 7, stage: 1 };
+    const r = doMerge(a, a);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.produced).toEqual({ kind: 'complete', level: 7 });
+    expect(r.xpGained).toBe(49);
+  });
+
+  it('2 intermediate lvl 8 stage 1 -> intermediate lvl 8 stage 2, xp=8', () => {
+    const a: GiftItem = { kind: 'intermediate', level: 8, stage: 1 };
+    const r = doMerge(a, a);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.produced).toEqual({ kind: 'intermediate', level: 8, stage: 2 });
+    expect(r.xpGained).toBe(8);
+  });
+
+  it('2 intermediate lvl 10 stage 1 -> intermediate lvl 10 stage 2, xp=10', () => {
+    const a: GiftItem = { kind: 'intermediate', level: 10, stage: 1 };
+    const r = doMerge(a, a);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.produced).toEqual({ kind: 'intermediate', level: 10, stage: 2 });
+    expect(r.xpGained).toBe(10);
+  });
+
+  it('2 intermediate lvl 8 stage 2 -> complete(8), xp=64', () => {
+    const a: GiftItem = { kind: 'intermediate', level: 8, stage: 2 };
     const r = doMerge(a, a);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.produced).toEqual({ kind: 'complete', level: 8 });
     expect(r.xpGained).toBe(64);
+  });
+
+  it('2 intermediate lvl 10 stage 2 -> complete(10), xp=100', () => {
+    const a: GiftItem = { kind: 'intermediate', level: 10, stage: 2 };
+    const r = doMerge(a, a);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.produced).toEqual({ kind: 'complete', level: 10 });
+    expect(r.xpGained).toBe(100);
   });
 
   it('complete(3) + complete(3) -> complete(4), xp=32', () => {
@@ -107,7 +161,7 @@ describe('merge - invalid scenarios', () => {
 
   it('part + intermediate -> false', () => {
     const a: GiftItem = { kind: 'part', level: 6 };
-    const b: GiftItem = { kind: 'intermediate', level: 6 };
+    const b: GiftItem = { kind: 'intermediate', level: 6, stage: 1 };
     expect(canMerge(a, b)).toBe(false);
   });
 
@@ -118,8 +172,14 @@ describe('merge - invalid scenarios', () => {
   });
 
   it('different level intermediates -> false', () => {
-    const a: GiftItem = { kind: 'intermediate', level: 6 };
-    const b: GiftItem = { kind: 'intermediate', level: 7 };
+    const a: GiftItem = { kind: 'intermediate', level: 6, stage: 1 };
+    const b: GiftItem = { kind: 'intermediate', level: 7, stage: 1 };
+    expect(canMerge(a, b)).toBe(false);
+  });
+
+  it('same level different stage intermediates -> false', () => {
+    const a: GiftItem = { kind: 'intermediate', level: 8, stage: 1 };
+    const b: GiftItem = { kind: 'intermediate', level: 8, stage: 2 };
     expect(canMerge(a, b)).toBe(false);
   });
 

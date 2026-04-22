@@ -33,6 +33,7 @@ interface SpriteStyle {
   icon: string;
   kind: 'part' | 'intermediate' | 'complete' | 'collectible';
   level?: number;
+  stage?: 1 | 2;
 }
 
 function resolveStyle(item: GiftItem): SpriteStyle {
@@ -56,7 +57,7 @@ function resolveStyle(item: GiftItem): SpriteStyle {
       bg: hexToRgba(cfg.color, 0.38),
       border: hexToRgba(darken(cfg.color, 20), 0.5),
       iconColor: darken(cfg.color, 80),
-      iconOpacity: 0.5,
+      iconOpacity: 0.45,
       icon: cfg.icon,
       kind: 'part',
       level,
@@ -64,14 +65,17 @@ function resolveStyle(item: GiftItem): SpriteStyle {
   }
 
   if (item.kind === 'intermediate') {
+    const stageAlphaBg = item.stage === 2 ? 0.7 : 0.45;
+    const stageIconOpacity = item.stage === 2 ? 0.9 : 0.7;
     return {
-      bg: hexToRgba(cfg.color, 0.65),
-      border: hexToRgba(darken(cfg.color, 30), 0.75),
-      iconColor: darken(cfg.color, 75),
-      iconOpacity: 0.82,
+      bg: hexToRgba(cfg.color, stageAlphaBg),
+      border: hexToRgba(darken(cfg.color, 30), item.stage === 2 ? 0.9 : 0.75),
+      iconColor: darken(cfg.color, 85),
+      iconOpacity: stageIconOpacity,
       icon: cfg.icon,
       kind: 'intermediate',
       level,
+      stage: item.stage,
     };
   }
 
@@ -85,6 +89,19 @@ function resolveStyle(item: GiftItem): SpriteStyle {
     kind: 'complete',
     level,
   };
+}
+
+// Icon sizes per kind/stage
+function resolveIconSize(
+  kind: SpriteStyle['kind'],
+  stage?: 1 | 2,
+  level?: number,
+): number {
+  if (kind === 'collectible') return 36;
+  if (kind === 'complete') return level && level >= 7 ? 34 : 32;
+  if (kind === 'intermediate') return stage === 2 ? 32 : 28;
+  // part
+  return 22;
 }
 
 function CollectibleBadge({ color }: { color: string }): JSX.Element {
@@ -118,17 +135,19 @@ function PartBadge({ color }: { color: string }): JSX.Element {
   );
 }
 
-function IntermediateBadge({ color }: { color: string }): JSX.Element {
+function IntermediateBadge({ color, stage }: { color: string; stage: 1 | 2 }): JSX.Element {
+  const icon = stage === 2 ? 'ph:circle-three-quarters-fill' : 'ph:circle-half-fill';
+  const opacity = stage === 2 ? 0.92 : 0.75;
   return (
     <span
       className="absolute bottom-0.5 right-0.5 flex items-center justify-center"
       style={{ width: 14, height: 14 }}
     >
       <Icon
-        icon="ph:circle-half-fill"
+        icon={icon}
         width={11}
         height={11}
-        style={{ color, opacity: 0.75, display: 'block' }}
+        style={{ color, opacity, display: 'block' }}
       />
     </span>
   );
@@ -142,53 +161,104 @@ export function GiftSprite({ item, cellId, isSelling = false }: GiftSpriteProps)
 
   const style = resolveStyle(item);
 
-  // Complete lvl >=7 → breathing glow
   const isHighLevel = style.kind === 'complete' && typeof style.level === 'number' && style.level >= 7;
   const isCollectible = style.kind === 'collectible';
 
+  const iconSize = resolveIconSize(style.kind, style.stage, style.level);
+
+  // --- Background ---
+  let bgStyle: React.CSSProperties;
+
+  if (style.kind === 'part') {
+    // Greyscale tinted stripes on near-white base
+    bgStyle = {
+      backgroundImage: `repeating-linear-gradient(
+        -45deg,
+        ${hexToRgba(style.border, 0.22)} 0px,
+        ${hexToRgba(style.border, 0.22)} 1.5px,
+        transparent 1.5px,
+        transparent 7px
+      ), linear-gradient(135deg, rgba(255,255,255,0.60), ${hexToRgba(style.border, 0.22)})`,
+      filter: 'grayscale(0.65)',
+    };
+  } else if (style.kind === 'intermediate') {
+    // Solid tinted with inset top highlight for stage 2
+    bgStyle = {
+      background: style.bg,
+    };
+  } else if (style.kind === 'complete') {
+    // Soft gradient: near-white → tinted
+    bgStyle = {
+      background: `linear-gradient(135deg, #FFFFFF, ${hexToRgba(style.bg, 0.72)})`,
+    };
+  } else {
+    // collectible: soft cream base, gold outline handles the flair
+    bgStyle = {
+      background: `linear-gradient(135deg, #FFFDF7, ${hexToRgba(style.bg, 0.65)})`,
+    };
+  }
+
+  // --- Border ---
+  let borderStyle: string;
+  if (style.kind === 'part') {
+    borderStyle = `1.5px dashed ${hexToRgba(style.border, 0.4)}`;
+  } else if (style.kind === 'intermediate') {
+    borderStyle = `1.5px solid ${hexToRgba(style.border, style.stage === 2 ? 0.9 : 0.7)}`;
+  } else if (style.kind === 'complete') {
+    borderStyle = `1.5px solid ${style.border}`;
+  } else {
+    borderStyle = '1.5px solid #E8B97A';
+  }
+
+  // --- Shadow / Extra ---
   let extraStyle: React.CSSProperties = {};
 
   if (isCollectible) {
     extraStyle = {
       animation: 'collectible-glow 2.2s ease-in-out infinite',
-      outline: `2px solid ${hexToRgba(style.border, 0.55)}`,
+      outline: '2px solid #E8B97A',
       outlineOffset: '1px',
+      boxShadow: '0 0 0 1px rgba(232,185,122,0.35), 0 3px 12px rgba(232,185,122,0.3)',
     };
   } else if (isHighLevel) {
     extraStyle = {
       animation: 'breathe 3s ease-in-out infinite',
+      boxShadow: `0 3px 12px ${hexToRgba(style.border, 0.45)}`,
+    };
+  } else if (style.kind === 'complete') {
+    extraStyle = {
+      boxShadow: `0 3px 10px rgba(0,0,0,0.08)`,
+    };
+  } else if (style.kind === 'intermediate' && style.stage === 2) {
+    // Subtle inset highlight on top edge for stage 2
+    extraStyle = {
+      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.50), 0 2px 6px ${hexToRgba(style.border, 0.3)}`,
+    };
+  } else if (style.kind === 'intermediate') {
+    extraStyle = {
+      boxShadow: `0 1px 4px ${hexToRgba(style.border, 0.2)}`,
     };
   }
 
-  // Part: dashed-style inset striped bg pattern
-  let bgStyle: React.CSSProperties = { background: style.bg };
+  // --- Icon filter ---
+  // For part: grayscale is on the wrapper; icon needs no extra filter
+  // For all fluent-emoji: do NOT pass color prop (they are multicolor SVG)
+  let iconFilter: string | undefined;
   if (style.kind === 'part') {
-    bgStyle = {
-      backgroundImage: `repeating-linear-gradient(
-        -45deg,
-        ${hexToRgba(style.border, 0.18)} 0px,
-        ${hexToRgba(style.border, 0.18)} 2px,
-        transparent 2px,
-        transparent 8px
-      ), linear-gradient(135deg, ${style.bg}, ${hexToRgba(style.border, 0.4)})`,
-    };
+    // grayscale already applied to wrapper via bgStyle filter;
+    // extra opacity only via iconOpacity below
+    iconFilter = undefined;
   }
-
-  const baseBoxShadow =
-    style.kind === 'complete' && !isHighLevel
-      ? `0 0 0 1px ${hexToRgba(style.border, 0.4)}, 0 2px 8px ${hexToRgba(style.border, 0.25)}`
-      : undefined;
 
   return (
     <motion.div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className="w-full h-full flex items-center justify-center rounded-xl select-none cursor-grab relative"
+      className="w-full h-full flex items-center justify-center rounded-xl select-none cursor-grab relative overflow-hidden"
       style={{
         ...bgStyle,
-        border: `1.5px solid ${style.border}`,
-        boxShadow: baseBoxShadow,
+        border: borderStyle,
         touchAction: 'none',
         ...extraStyle,
       }}
@@ -206,19 +276,24 @@ export function GiftSprite({ item, cellId, isSelling = false }: GiftSpriteProps)
     >
       <Icon
         icon={style.icon}
-        width={26}
-        height={26}
-        style={{ color: style.iconColor, opacity: style.iconOpacity }}
+        width={iconSize}
+        height={iconSize}
+        style={{
+          opacity: style.iconOpacity,
+          display: 'block',
+          filter: iconFilter,
+          // No `color` prop — fluent-emoji are multicolor SVG, color would override fills
+        }}
       />
 
       {style.kind === 'collectible' && (
-        <CollectibleBadge color={darken(style.border, -20)} />
+        <CollectibleBadge color="#B8860B" />
       )}
       {style.kind === 'part' && (
         <PartBadge color={style.iconColor} />
       )}
       {style.kind === 'intermediate' && (
-        <IntermediateBadge color={style.iconColor} />
+        <IntermediateBadge color={darken(style.border, -10)} stage={style.stage ?? 1} />
       )}
     </motion.div>
   );

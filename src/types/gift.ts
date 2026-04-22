@@ -12,8 +12,11 @@ export type CollectibleId =
   | 'col_9'
   | 'col_10';
 
+export type IntermediateLevel = 6 | 7 | 8 | 9 | 10;
+export type IntermediateStage = 1 | 2;
+
 export type GiftItem =
   | { kind: 'part'; level: GiftLevel }
-  | { kind: 'intermediate'; level: 6 | 7 | 8 | 9 | 10 }
+  | { kind: 'intermediate'; level: IntermediateLevel; stage: IntermediateStage }
   | { kind: 'complete'; level: GiftLevel }
   | { kind: 'collectible'; id: CollectibleId };

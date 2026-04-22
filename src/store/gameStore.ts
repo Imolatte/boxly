@@ -13,6 +13,8 @@ import { loadSave, debouncedSave, clearSave } from './persistence';
 import { useToastStore } from './toastStore';
 import { impact, notification } from '../telegram/haptics';
 import { sfx } from '../audio/sfx';
+import { GIFT_CONFIGS } from '../config/gifts';
+import { COLLECTIBLE_CONFIGS } from '../config/collectibles';
 
 function makeEmptyBoard(): Board {
   const cells: BoardCell[] = [];
@@ -59,8 +61,18 @@ function placeInFirstEmpty(board: Board, item: Board[number]['item']): Board {
 function describeReward(reward: RouletteReward): string {
   if (reward.kind === 'energy') return `+${reward.amount} ⚡`;
   if (reward.kind === 'xp') return `+${reward.amount} XP`;
-  if (reward.kind === 'gift') return `Подарок C${reward.item.kind === 'complete' ? reward.item.level : '?'}`;
-  if (reward.kind === 'collectible') return `Коллекционка K${reward.id.replace('col_', '')}`;
+  if (reward.kind === 'gift') {
+    const item = reward.item;
+    if (item.kind === 'complete') {
+      const cfg = GIFT_CONFIGS[item.level];
+      return `Подарок ${cfg?.label ?? `lvl ${item.level}`}`;
+    }
+    return 'Подарок';
+  }
+  if (reward.kind === 'collectible') {
+    const name = COLLECTIBLE_CONFIGS[reward.id]?.name;
+    return name ? `Коллекционка: ${name}` : `Коллекционка K${reward.id.replace('col_', '')}`;
+  }
   return 'Неизвестная награда';
 }
 
@@ -84,6 +96,10 @@ interface GameActions {
 type GameStore = GameState & GameActions;
 
 const toast = () => useToastStore.getState();
+
+function saveUiFrom(ui: GameState['ui']): { onboardingStep: number; soundEnabled: boolean } {
+  return { onboardingStep: ui.onboardingStep, soundEnabled: ui.soundEnabled };
+}
 
 export const useGameStore = create<GameStore>((set, get) => ({
   ...makeDefaultState(),
@@ -130,37 +146,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const emptyAfterDrop = countEmpty(newBoard);
 
       if ((rouletteReward.kind === 'gift' || rouletteReward.kind === 'collectible') && emptyAfterDrop === 0) {
+        // Field full and reward needs a slot — skip roulette, give +50 energy fallback.
         toast().push('Поле полное — награду конвертировали в +50 ⚡', 'info');
-        finalPlayer = { ...finalPlayer, energy: finalPlayer.energy + 50 };
-      } else if (rouletteReward.kind === 'energy') {
-        // Open roulette modal via ui state
-        finalPlayer = { ...finalPlayer, energy: finalPlayer.energy + rouletteReward.amount };
+        finalPlayer = { ...finalPlayer, energy: Math.min(finalPlayer.energyCap, finalPlayer.energy + 50) };
+      } else {
+        // Open roulette modal; the actual reward applies once in applyRouletteReward.
         set((s) => ({ ui: { ...s.ui, activeRoulette: rouletteReward } }));
-      } else if (rouletteReward.kind === 'xp') {
-        const { player: xpPlayer, leveledUpTo } = applyXp(finalPlayer, rouletteReward.amount);
-        finalPlayer = xpPlayer;
-        set((s) => ({ ui: { ...s.ui, activeRoulette: rouletteReward } }));
-        if (leveledUpTo.length > 0) {
-          const last = leveledUpTo[leveledUpTo.length - 1];
-          const bonus = leveledUpTo.reduce((s, lv) => s + LEVEL_UP_ENERGY(lv), 0);
-          get().showLevelUp(last, bonus);
-        }
-      } else if (rouletteReward.kind === 'gift') {
-        set((s) => ({ ui: { ...s.ui, activeRoulette: rouletteReward } }));
-        const giftEmptyIdx = newBoard.findIndex((c) => c.item === null);
-        if (giftEmptyIdx !== -1) {
-          newBoard = newBoard.map((c, i) =>
-            i === giftEmptyIdx ? { ...c, item: rouletteReward.item } : c,
-          );
-        }
-      } else if (rouletteReward.kind === 'collectible') {
-        set((s) => ({ ui: { ...s.ui, activeRoulette: rouletteReward } }));
-        const colEmptyIdx = newBoard.findIndex((c) => c.item === null);
-        if (colEmptyIdx !== -1) {
-          newBoard = newBoard.map((c, i) =>
-            i === colEmptyIdx ? { ...c, item: { kind: 'collectible', id: rouletteReward.id } } : c,
-          );
-        }
       }
     }
 
@@ -168,7 +159,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     set((s) => ({ board: newBoard, player: finalPlayer, meta: newMeta, ui: { ...s.ui } }));
 
-    debouncedSave({ board: newBoard, player: finalPlayer, meta: newMeta });
+    debouncedSave({ board: newBoard, player: finalPlayer, meta: newMeta, ui: saveUiFrom(get().ui) });
   },
 
   tryMerge(fromId, toId) {
@@ -205,7 +196,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       newPlayer = xpPlayer;
 
       if (energyBonus) {
-        newPlayer = { ...newPlayer, energy: newPlayer.energy + energyBonus };
+        newPlayer = { ...newPlayer, energy: Math.min(newPlayer.energyCap, newPlayer.energy + energyBonus) };
       }
 
       if (leveledUpTo.length > 0) {
@@ -245,7 +236,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newMeta = { ...get().meta, lastPlayedAt: now };
 
     set({ board: newBoard, player: newPlayer, meta: newMeta, ui: { ...get().ui, selectedCellId: null } });
-    debouncedSave({ board: newBoard, player: newPlayer, meta: newMeta });
+    debouncedSave({ board: newBoard, player: newPlayer, meta: newMeta, ui: saveUiFrom(get().ui) });
   },
 
   selectCell(id) {
@@ -271,12 +262,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (sellCellIdx !== -1) get().pushFx('sell', sellCellIdx);
 
     const newBoard = board.map((c) => (c.id === ui.selectedCellId ? { ...c, item: null } : c));
-    const newPlayer = { ...player, energy: player.energy + value };
+    const newPlayer = { ...player, energy: Math.min(player.energyCap, player.energy + value) };
     const now = Date.now();
     const newMeta = { ...get().meta, lastPlayedAt: now };
 
     set({ board: newBoard, player: newPlayer, meta: newMeta, ui: { ...get().ui, selectedCellId: null } });
-    debouncedSave({ board: newBoard, player: newPlayer, meta: newMeta });
+    debouncedSave({ board: newBoard, player: newPlayer, meta: newMeta, ui: saveUiFrom(get().ui) });
   },
 
   resetProgress() {
@@ -303,20 +294,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if ((reward.kind === 'gift' || reward.kind === 'collectible') && empty === 0) {
       toast().push('Поле полное — награду конвертировали в +50 ⚡', 'info');
-      const newPlayer = { ...player, energy: player.energy + 50 };
+      const newPlayer = { ...player, energy: Math.min(player.energyCap, player.energy + 50) };
       set({ player: newPlayer, meta: newMeta });
-      debouncedSave({ board, player: newPlayer, meta: newMeta });
+      debouncedSave({ board, player: newPlayer, meta: newMeta, ui: saveUiFrom(get().ui) });
       return;
     }
 
     if (reward.kind === 'energy') {
-      const newPlayer = { ...player, energy: player.energy + reward.amount };
+      const newPlayer = { ...player, energy: Math.min(player.energyCap, player.energy + reward.amount) };
       set({ player: newPlayer, meta: newMeta });
-      debouncedSave({ board, player: newPlayer, meta: newMeta });
+      debouncedSave({ board, player: newPlayer, meta: newMeta, ui: saveUiFrom(get().ui) });
     } else if (reward.kind === 'xp') {
       const { player: updated, leveledUpTo } = applyXp(player, reward.amount);
       set({ player: updated, meta: newMeta });
-      debouncedSave({ board, player: updated, meta: newMeta });
+      debouncedSave({ board, player: updated, meta: newMeta, ui: saveUiFrom(get().ui) });
       if (leveledUpTo.length > 0) {
         const top = leveledUpTo[leveledUpTo.length - 1];
         const energyBonus = leveledUpTo.reduce((s, lv) => s + LEVEL_UP_ENERGY(lv), 0);
@@ -325,11 +316,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     } else if (reward.kind === 'gift') {
       const newBoard = placeInFirstEmpty(board, reward.item);
       set({ board: newBoard, meta: newMeta });
-      debouncedSave({ board: newBoard, player, meta: newMeta });
+      debouncedSave({ board: newBoard, player, meta: newMeta, ui: saveUiFrom(get().ui) });
     } else if (reward.kind === 'collectible') {
       const newBoard = placeInFirstEmpty(board, { kind: 'collectible', id: reward.id });
       set({ board: newBoard, meta: newMeta });
-      debouncedSave({ board: newBoard, player, meta: newMeta });
+      debouncedSave({ board: newBoard, player, meta: newMeta, ui: saveUiFrom(get().ui) });
     }
   },
 
@@ -346,12 +337,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((s) => ({
       ui: { ...s.ui, onboardingStep: s.ui.onboardingStep + 1 },
     }));
+    const { board, player, meta, ui } = get();
+    debouncedSave({ board, player, meta, ui: saveUiFrom(ui) });
   },
 
   toggleSound() {
     set((s) => ({
       ui: { ...s.ui, soundEnabled: !s.ui.soundEnabled },
     }));
+    const { board, player, meta, ui } = get();
+    debouncedSave({ board, player, meta, ui: saveUiFrom(ui) });
   },
 }));
 
@@ -362,10 +357,15 @@ export function describeRouletteReward(reward: RouletteReward): string {
 export async function initializeGameStore(): Promise<void> {
   const saved = await loadSave();
   if (saved) {
-    useGameStore.setState({
+    useGameStore.setState((s) => ({
       board: saved.board,
       player: saved.player,
       meta: saved.meta,
-    });
+      ui: {
+        ...s.ui,
+        onboardingStep: saved.ui.onboardingStep,
+        soundEnabled: saved.ui.soundEnabled,
+      },
+    }));
   }
 }

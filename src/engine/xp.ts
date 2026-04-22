@@ -20,6 +20,7 @@ export function applyXp(p: PlayerState, add: number): ApplyXpResult {
 
   const energyBonus = leveledUpTo.reduce((s, lv) => s + LEVEL_UP_ENERGY(lv), 0);
   const capBonus = leveledUpTo.length * LEVEL_UP_CAP_BONUS;
+  const newCap = p.energyCap + capBonus;
 
   return {
     player: {
@@ -27,8 +28,8 @@ export function applyXp(p: PlayerState, add: number): ApplyXpResult {
       level,
       xpTotal: newXpTotal,
       xp: newXpTotal,
-      energyCap: p.energyCap + capBonus,
-      energy: p.energy + energyBonus,
+      energyCap: newCap,
+      energy: Math.min(newCap, p.energy + energyBonus),
     },
     leveledUpTo,
   };

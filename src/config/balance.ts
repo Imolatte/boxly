@@ -1,9 +1,9 @@
 export const BOARD_W = 5;
-export const BOARD_H = 5;
+export const BOARD_H = 6;
 
 export const ENERGY_START_CAP = 100;
 export const ENERGY_REGEN_MS = 4 * 60 * 1000;
-export const ENERGY_CAP_PER_LEVEL = 10;
+export const ENERGY_CAP_PER_LEVEL = 2;
 export const CREATE_COST = 1;
 
 export const PART_WEIGHTS = [
@@ -23,6 +23,6 @@ export const ROULETTE_PROB_PER_CREATE = 0.02;
 
 export const totalXpToReach = (n: number): number => n * n * 100;
 
-export const LEVEL_UP_ENERGY = (n: number): number => n * 15;
+export const LEVEL_UP_ENERGY = (_n: number): number => 10;
 
-export const LEVEL_UP_CAP_BONUS = 10;
+export const LEVEL_UP_CAP_BONUS = 2;

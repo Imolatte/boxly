@@ -28,10 +28,10 @@ describe('applyXp - single level up', () => {
     expect(player.level).toBe(2);
     expect(leveledUpTo).toEqual([2]);
     expect(player.xpTotal).toBe(400);
-    // energyBonus = LEVEL_UP_ENERGY(2) = 30
-    expect(player.energy).toBe(100 + 30);
-    // capBonus = ENERGY_CAP_PER_LEVEL = 10
-    expect(player.energyCap).toBe(100 + 10);
+    // energyBonus = LEVEL_UP_ENERGY = 10, but clamped to new cap = 102
+    expect(player.energy).toBe(102);
+    // capBonus = ENERGY_CAP_PER_LEVEL = 2
+    expect(player.energyCap).toBe(100 + 2);
   });
 });
 
@@ -45,11 +45,12 @@ describe('applyXp - multiple level ups', () => {
     expect(player.xpTotal).toBe(15000);
   });
 
-  it('energy can exceed cap on multi-level up', () => {
-    const p = makePlayer({ level: 1, xpTotal: 0, energy: 90, energyCap: 100 });
+  it('energy is clamped to cap on level up', () => {
+    const p = makePlayer({ level: 1, xpTotal: 0, energy: 100, energyCap: 100 });
     const { player } = applyXp(p, 400);
-    // lvl2 bonus = +30 energy -> 120 > cap=110
-    expect(player.energy).toBeGreaterThan(player.energyCap);
+    // bonus +10, newCap 102, energy 100+10=110 clamped to 102
+    expect(player.energy).toBe(player.energyCap);
+    expect(player.energyCap).toBe(102);
   });
 });
 

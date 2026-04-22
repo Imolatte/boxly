@@ -9,6 +9,10 @@ export function useAutoSave(): void {
         board: state.board,
         player: state.player,
         meta: state.meta,
+        ui: {
+          onboardingStep: state.ui.onboardingStep,
+          soundEnabled: state.ui.soundEnabled,
+        },
       });
     });
   }, []);

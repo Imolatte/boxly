@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '../../store/gameStore';
+import { useGameStore, describeRouletteReward } from '../../store/gameStore';
 import type { RouletteReward } from '../../types/events';
 import { selection, impact } from '../../telegram/haptics';
 import { sfx } from '../../audio/sfx';
@@ -233,15 +233,25 @@ export function RouletteModal(): JSX.Element | null {
             </div>
 
             {spinState === 'stopped' ? (
-              <motion.button
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={handleClaim}
-                className="w-full py-3 rounded-2xl font-bold text-base text-white"
-                style={{ background: 'linear-gradient(135deg, #EFC0A8 0%, #E8B4A0 100%)' }}
-              >
-                Забрать
-              </motion.button>
+              <div className="w-full flex flex-col items-center gap-3">
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-lg font-bold text-center"
+                  style={{ color: '#2A2620' }}
+                >
+                  {activeRoulette ? describeRouletteReward(activeRoulette) : ''}
+                </motion.div>
+                <motion.button
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  onClick={handleClaim}
+                  className="w-full py-3 rounded-2xl font-bold text-base text-white"
+                  style={{ background: 'linear-gradient(135deg, #EFC0A8 0%, #E8B4A0 100%)' }}
+                >
+                  Забрать
+                </motion.button>
+              </div>
             ) : (
               <div className="h-[46px] flex items-center">
                 <span className="text-sm text-boxly-text/50">Крутится...</span>
