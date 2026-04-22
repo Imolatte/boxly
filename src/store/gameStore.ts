@@ -174,13 +174,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let newBoard = board;
     let newPlayer = player;
 
-    if (toCell.item === null || !fromCell.item || !canMerge(fromCell.item, toCell.item)) {
+    if (!fromCell.item) return;
+    if (toCell.item !== null && !canMerge(fromCell.item, toCell.item)) return;
+
+    if (toCell.item === null) {
       newBoard = board.map((c) => {
-        if (c.id === fromId) return { ...c, item: toCell.item };
+        if (c.id === fromId) return { ...c, item: null };
         if (c.id === toId) return { ...c, item: fromCell.item };
         return c;
       });
-    } else if (fromCell.item && toCell.item && canMerge(fromCell.item, toCell.item)) {
+    } else if (canMerge(fromCell.item, toCell.item)) {
       const mergeResult = doMerge(fromCell.item, toCell.item);
       if (!mergeResult.ok) return;
 
