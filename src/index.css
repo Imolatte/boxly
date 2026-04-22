@@ -69,6 +69,14 @@ body.dnd-dragging [style*="Backdrop"] {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
+body.dnd-dragging .boxly-cell,
+body.dnd-dragging .boxly-sprite {
+  transition: none !important;
+}
+body.dnd-dragging .boxly-sprite {
+  box-shadow: none !important;
+  outline: none !important;
+}
 
 html,
 body {

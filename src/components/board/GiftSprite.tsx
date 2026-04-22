@@ -266,11 +266,13 @@ export function GiftSprite({ item, cellId, isSelling = false }: GiftSpriteProps)
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className="w-full h-full flex items-center justify-center rounded-xl select-none cursor-grab relative overflow-hidden"
+      className="w-full h-full flex items-center justify-center rounded-xl select-none cursor-grab relative overflow-hidden boxly-sprite"
       style={{
         ...bgStyle,
         border: borderStyle,
         touchAction: 'none',
+        contain: 'layout paint style',
+        willChange: 'transform',
         ...extraStyle,
       }}
       initial={{ y: -16, opacity: 0, scale: 0.85 }}

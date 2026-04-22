@@ -55,12 +55,13 @@ export function Cell({ cell, isSelected, onSelect, fx, mergePreview = false }: C
     <div
       ref={setNodeRef}
       onClick={() => onSelect(cell.id)}
-      className="rounded-xl flex items-center justify-center relative cursor-pointer"
+      className="rounded-xl flex items-center justify-center relative cursor-pointer boxly-cell"
       style={{
         width: '100%',
         aspectRatio: '1',
         border: `1.5px solid ${borderColor}`,
         transition: 'border-color 0.15s, box-shadow 0.15s, background 0.15s',
+        contain: 'layout paint style',
         ...bgStyle,
       }}
     >
