@@ -307,7 +307,7 @@ export function InfoPage(): JSX.Element {
           ))}
         </div>
         <p className="text-xs mt-3" style={{ color: 'rgba(42,38,32,0.5)' }}>
-          Коллекционки нельзя продать — только объединить с такой же.
+          Коллекционку можно продать за +5 ⚡, но дубликат даёт куда больше — +50 ⚡ и 2000 XP.
         </p>
       </SectionCard>
 

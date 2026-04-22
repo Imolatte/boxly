@@ -18,12 +18,18 @@ export function SellButton(): JSX.Element | null {
   if (value === null) return null;
 
   const isComplete = cell.item.kind === 'complete';
+  const isCollectible = cell.item.kind === 'collectible';
   const level = cell.item.kind === 'complete' ? cell.item.level : null;
-  const label = isComplete && level !== null
-    ? `C${level} → +1 ⚡`
-    : 'Удалить';
+  let label: string;
+  if (isComplete && level !== null) {
+    label = `C${level} → +1 ⚡`;
+  } else if (isCollectible) {
+    label = `Продать → +${value} ⚡`;
+  } else {
+    label = 'Удалить';
+  }
 
-  const isFree = !isComplete;
+  const isFree = !isComplete && !isCollectible;
 
   return (
     <motion.button
@@ -52,7 +58,7 @@ export function SellButton(): JSX.Element | null {
         />
       )}
       <Icon
-        icon={isComplete ? 'ph:hand-coins-fill' : 'ph:trash-simple'}
+        icon={isComplete || isCollectible ? 'ph:hand-coins-fill' : 'ph:trash-simple'}
         width={17}
         height={17}
         style={{ color: isFree ? 'rgba(42,38,32,0.4)' : '#3A6858', flexShrink: 0 }}
