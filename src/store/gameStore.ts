@@ -3,7 +3,7 @@ import type { GameState } from '../types/game';
 import type { Board, BoardCell } from '../types/board';
 import type { PlayerState } from '../types/player';
 import type { RouletteReward } from '../types/events';
-import { BOARD_W, BOARD_H, ENERGY_START_CAP, CREATE_COST, LEVEL_UP_ENERGY } from '../config/balance';
+import { BOARD_W, BOARD_H, ENERGY_START_CAP, CREATE_COST, LEVEL_UP_ENERGY, LEVEL_UP_CAP_BONUS } from '../config/balance';
 import { computeRegenSince } from '../engine/energy';
 import { applyXp } from '../engine/xp';
 import { dropPart } from '../engine/dropPart';
@@ -88,7 +88,7 @@ interface GameActions {
   applyRouletteReward: (reward: RouletteReward) => void;
   pushFx: (type: 'merge' | 'sell', cellIdx: number) => void;
   removeFx: (id: string) => void;
-  showLevelUp: (level: number, energyBonus: number) => void;
+  showLevelUp: (level: number, energyBonus: number, capBonus: number) => void;
   dismissLevelUp: () => void;
   advanceOnboarding: () => void;
   toggleSound: () => void;
@@ -205,7 +205,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (leveledUpTo.length > 0) {
         const last = leveledUpTo[leveledUpTo.length - 1];
         const bonus = leveledUpTo.reduce((s, lv) => s + LEVEL_UP_ENERGY(lv), 0);
-        get().showLevelUp(last, bonus);
+        const capBonus = leveledUpTo.length * LEVEL_UP_CAP_BONUS;
+        get().showLevelUp(last, bonus, capBonus);
       }
 
       impact('medium');
@@ -328,7 +329,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (leveledUpTo.length > 0) {
         const top = leveledUpTo[leveledUpTo.length - 1];
         const energyBonus = leveledUpTo.reduce((s, lv) => s + LEVEL_UP_ENERGY(lv), 0);
-        get().showLevelUp(top, energyBonus);
+        const capBonus = leveledUpTo.length * LEVEL_UP_CAP_BONUS;
+        get().showLevelUp(top, energyBonus, capBonus);
       }
     } else if (reward.kind === 'gift') {
       const newBoard = placeInFirstEmpty(board, reward.item);
@@ -341,9 +343,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  showLevelUp(level, energyBonus) {
+  showLevelUp(level, energyBonus, capBonus) {
     notification('success');
-    set((s) => ({ ui: { ...s.ui, levelUp: { level, energyBonus } } }));
+    set((s) => ({ ui: { ...s.ui, levelUp: { level, energyBonus, capBonus } } }));
     const { player } = get();
     void submitScore(player.level, player.xpTotal);
   },

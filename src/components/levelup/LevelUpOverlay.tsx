@@ -52,7 +52,7 @@ export function LevelUpOverlay(): JSX.Element | null {
             </h2>
             <div className="flex flex-col items-center gap-1">
               <p className="text-base text-boxly-text/80">+{levelUp.energyBonus} ⚡ энергии</p>
-              <p className="text-base text-boxly-text/80">+5 к cap энергии</p>
+              <p className="text-base text-boxly-text/80">+{levelUp.capBonus} к cap энергии</p>
             </div>
             <button
               onClick={dismissLevelUp}

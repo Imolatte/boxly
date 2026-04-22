@@ -14,7 +14,7 @@ export interface GameState {
     selectedCellId: string | null;
     activeRoulette: RouletteReward | null;
     pendingLevelUp: number | null;
-    levelUp: { level: number; energyBonus: number } | null;
+    levelUp: { level: number; energyBonus: number; capBonus: number } | null;
     fx: Array<{ id: string; type: 'merge' | 'sell'; cellIdx: number }>;
     onboardingStep: number;
     soundEnabled: boolean;
