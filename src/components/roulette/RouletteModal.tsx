@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore, describeRouletteReward } from '../../store/gameStore';
+import { useGameStore } from '../../store/gameStore';
+import { GIFT_CONFIGS } from '../../config/gifts';
+import { COLLECTIBLE_CONFIGS } from '../../config/collectibles';
 import type { RouletteReward } from '../../types/events';
 import { selection, impact } from '../../telegram/haptics';
 import { sfx } from '../../audio/sfx';
@@ -113,6 +115,50 @@ function Wheel({ rotation }: WheelProps): JSX.Element {
       <circle cx={cx} cy={cy} r="6" fill="#E8B4A0" />
     </svg>
   );
+}
+
+function RewardDisplay({ reward }: { reward: RouletteReward }): JSX.Element {
+  const emojiStyle: React.CSSProperties = { fontSize: 56, lineHeight: 1, userSelect: 'none' };
+  const labelStyle: React.CSSProperties = { color: '#2A2620', fontSize: 18, fontWeight: 700 };
+
+  if (reward.kind === 'energy') {
+    return (
+      <>
+        <span style={emojiStyle}>⚡</span>
+        <span style={labelStyle}>+{reward.amount}</span>
+      </>
+    );
+  }
+
+  if (reward.kind === 'xp') {
+    return (
+      <>
+        <span style={emojiStyle}>⭐</span>
+        <span style={labelStyle}>+{reward.amount} XP</span>
+      </>
+    );
+  }
+
+  if (reward.kind === 'gift' && reward.item.kind === 'complete') {
+    const cfg = GIFT_CONFIGS[reward.item.level];
+    return (
+      <>
+        <span style={emojiStyle}>{cfg.icon}</span>
+        <span style={labelStyle}>Подарок {reward.item.level} lvl</span>
+      </>
+    );
+  }
+
+  if (reward.kind === 'collectible') {
+    const cfg = COLLECTIBLE_CONFIGS[reward.id];
+    return (
+      <>
+        <span style={emojiStyle}>{cfg.icon}</span>
+        <span style={labelStyle}>{cfg.name}</span>
+      </>
+    );
+  }
+  return <span style={labelStyle}>Награда</span>;
 }
 
 export function RouletteModal(): JSX.Element | null {
@@ -233,10 +279,9 @@ export function RouletteModal(): JSX.Element | null {
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-lg font-bold text-center"
-                  style={{ color: '#2A2620' }}
+                  className="flex flex-col items-center gap-1"
                 >
-                  {activeRoulette ? describeRouletteReward(activeRoulette) : ''}
+                  {activeRoulette ? <RewardDisplay reward={activeRoulette} /> : null}
                 </motion.div>
                 <motion.button
                   initial={{ opacity: 0, y: 8 }}
