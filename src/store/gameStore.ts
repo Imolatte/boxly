@@ -389,4 +389,33 @@ export async function initializeGameStore(): Promise<void> {
       },
     }));
   }
+  applyUrlGrant();
+}
+
+function applyUrlGrant(): void {
+  if (typeof window === 'undefined') return;
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('grant_energy');
+  const grantId = params.get('grant_id') ?? '';
+  if (!raw || !grantId) return;
+
+  const amount = Number.parseInt(raw, 10);
+  if (!Number.isFinite(amount) || amount <= 0) return;
+
+  const claimedKey = 'boxly_claimed_grants';
+  const claimed = JSON.parse(localStorage.getItem(claimedKey) ?? '[]') as string[];
+  if (!claimed.includes(grantId)) {
+    const { player, board, meta, ui } = useGameStore.getState();
+    const newPlayer = { ...player, energy: Math.min(player.energyCap, player.energy + amount) };
+    useGameStore.setState({ player: newPlayer });
+    debouncedSave({ board, player: newPlayer, meta, ui: saveUiFrom(ui) });
+    localStorage.setItem(claimedKey, JSON.stringify([...claimed, grantId]));
+    useToastStore.getState().push(`Бонус: +${amount} ⚡`, 'reward');
+  }
+
+  params.delete('grant_energy');
+  params.delete('grant_id');
+  const search = params.toString();
+  const url = window.location.pathname + (search ? `?${search}` : '') + window.location.hash;
+  window.history.replaceState(null, '', url);
 }
